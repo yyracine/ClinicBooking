@@ -1,0 +1,17 @@
+{
+  "name": "Clinic Bookings",
+  "short_name": "Clinic Bookings",
+  "description": "Prise de rendez-vous en ligne : choisissez un service, un praticien et un créneau en quelques minutes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f9b8e",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
