@@ -293,3 +293,66 @@ Administration »** + réponse à la question « Prendre rendez-vous pour qui ? 
   (hors `node_modules`/`.git`/`dist`/`.convex`/`*.zip`).
   Commande : `zip -r clinic-bookings-src.zip . -x "node_modules/*" -x ".git/*"
   -x "dist/*" -x ".convex/*" -x "*.zip"` puis copie dans `public/`.
+
+## 10. Session infra (9 août 2026) — Git, dépendances, Convex, Vercel
+
+Aucun changement de code métier cette session : uniquement de l'infra
+(dépôt Git, déploiement Convex, préparation Vercel). À reprendre à la
+prochaine session.
+
+1. **Dépôt Git initialisé** localement (le dossier n'était pas un repo) et
+   poussé sur **https://github.com/yyracine/ClinicBooking** (branche `main`).
+   Le remote contenait déjà un ancien commit « première version » (sans les
+   fonctionnalités v2) → **écrasé volontairement** (force push, confirmé par
+   l'utilisateur) par le commit local complet et à jour.
+2. **`CLAUDE.md` créé** à la racine (guidage pour Claude Code : commandes,
+   architecture, conventions) — complète `ARCHITECTURE.md` sans le dupliquer.
+3. **Bug d'installation trouvé et corrigé** : `node_modules/` n'existait pas
+   du tout (`bun install` jamais lancé) → `bunx convex dev` échouait avec
+   `[ERROR] Could not resolve "convex/server"`. Corrigé par `bun install`.
+4. **⚠️ Déploiement Convex changé** : l'ancien `.env.local` pointait vers
+   `whimsical-crane-613`, un déploiement qui **n'appartenait pas à ce
+   projet** (vérifié : ses fonctions `seed`/`demo` répondaient avec un schéma
+   multi-clinique fantôme — `clinics`, `doctorCountA/B` — absent du code
+   actuel ; `catalog:listServices`/`listDoctors` y restaient vides). Après
+   connexion de l'utilisateur (`bunx convex dev`), un **nouveau déploiement
+   légitime a été provisionné** :
+   - Team `yao-racine`, projet `clinicbooking`, déploiement dev
+     **`silent-cobra-790`**.
+   - `.env.local` mis à jour automatiquement (`VITE_CONVEX_URL`,
+     `CONVEX_DEPLOYMENT`, `VITE_CONVEX_SITE_URL`).
+   - Vérifié : `seedDemo:seedDemoData` renvoie bien la forme attendue par le
+     code actuel (`patients:3, visits:7, appointments:3`), `catalog:listServices`
+     et `listDoctors` retournent les données de démo.
+5. **Connexion démo impossible → corrigé** : le nouveau déploiement n'avait
+   pas les clés Convex Auth (`JWT_PRIVATE_KEY`, `JWKS`) → l'endpoint
+   `/.well-known/jwks.json` renvoyait `Missing environment variable "JWKS"`
+   (500), donc **aucune connexion** (démo ou autre) ne pouvait fonctionner.
+   Corrigé sans passer par l'assistant interactif `@convex-dev/auth` (qui
+   réécrit du code) : paire de clés RS256 générée localement avec `jose`,
+   poussée avec `bunx convex env set JWT_PRIVATE_KEY/JWKS --from-file`.
+   Connexion démo (`demo@clinic-bookings.local` / `demo1234`) **vérifiée OK**
+   par l'utilisateur.
+6. **`vercel.json` ajouté** (commité et poussé) pour préparer le déploiement
+   sur Vercel :
+   - `rewrites` : fallback SPA (le routeur est un `BrowserRouter` avec de
+     vraies routes `/auth`, `/dashboard` — sans ce fallback, un rafraîchissement
+     renvoie 404 sur Vercel).
+   - `buildCommand: "bunx convex deploy --cmd 'bun run build'"` : déploie les
+     fonctions Convex vers la **prod** puis build le frontend, en injectant
+     automatiquement `VITE_CONVEX_URL`/`VITE_CONVEX_SITE_URL` de prod.
+   - `installCommand: "bun install"` (explicite car le repo a `bun.lock`
+     **et** `package-lock.json` — évite toute ambiguïté de détection Vercel).
+
+### À faire à la prochaine session (déploiement Vercel)
+
+- [ ] Créer le projet sur Vercel (import depuis `yyracine/ClinicBooking`).
+- [ ] Générer une **`CONVEX_DEPLOY_KEY`** (dashboard Convex → Settings →
+      Production) et l'ajouter en variable d'env sur le projet Vercel.
+- [ ] Repousser les secrets serveur sur le déploiement **`--prod`** (jamais
+      copiés automatiquement entre déploiements) :
+      `JWT_PRIVATE_KEY`, `JWKS` (mêmes clés ou nouvelle paire — à décider),
+      puis `ELASTICEMAIL_API_KEY` / `TWILIO_*` / `CINETPAY_*` si on veut les
+      canaux réels en prod plutôt qu'en mode démo.
+- [ ] Premier déploiement Vercel, vérifier build + connexion + réservation
+      de bout en bout sur l'URL de prod.
