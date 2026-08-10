@@ -90,6 +90,9 @@ export const createDoctor = mutation({
     bio: v.optional(v.string()),
     phone: v.optional(v.string()),
     consultationPrice: v.optional(v.number()),
+    academicRank: v.optional(
+      v.union(v.literal("medecin"), v.literal("professeur")),
+    ),
     schedule: v.optional(v.array(scheduleEntry)),
   },
   handler: async (ctx, args) => {
@@ -125,6 +128,7 @@ export const createDoctor = mutation({
       bio: args.bio?.trim() || "",
       phone: args.phone?.trim() || undefined,
       consultationPrice: cleanPrice(args.consultationPrice),
+      academicRank: args.academicRank ?? "medecin",
       schedule: cleanSchedule(args.schedule),
       color: DOCTOR_TINTS[count.length % DOCTOR_TINTS.length],
     });
@@ -142,6 +146,9 @@ export const updateDoctor = mutation({
     bio: v.optional(v.string()),
     phone: v.optional(v.string()),
     consultationPrice: v.optional(v.number()),
+    academicRank: v.optional(
+      v.union(v.literal("medecin"), v.literal("professeur")),
+    ),
     schedule: v.optional(v.array(scheduleEntry)),
   },
   handler: async (ctx, args) => {
@@ -171,6 +178,7 @@ export const updateDoctor = mutation({
       bio: args.bio?.trim() || "",
       phone: args.phone?.trim() || undefined,
       consultationPrice: cleanPrice(args.consultationPrice),
+      academicRank: args.academicRank ?? "medecin",
       schedule: cleanSchedule(args.schedule),
     });
   },
