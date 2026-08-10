@@ -373,14 +373,16 @@ prochaine session.
    `bunx convex codegen && bunx convex deploy --cmd 'bun run build'`
    (`convex codegen` régénère `_generated/` localement, sans push, avant le
    build).
-5. **Intégration GitHub → Vercel non fonctionnelle** : un push sur `main`
-   après le fix ci-dessus n'a déclenché aucun nouveau build (webhook/accès
-   repo pas complètement configuré côté Vercel). Contournement : CLI Vercel
-   (`bunx vercel link` puis `bunx vercel --prod`) pour déployer directement
-   depuis le poste local — a fonctionné du premier coup après le fix #4.
-   **Reste à faire** : vérifier `Settings → Git` sur le projet Vercel pour
-   rebrancher le déploiement automatique sur push (sinon chaque changement
-   futur doit être déployé manuellement via `bunx vercel --prod`).
+5. **Intégration GitHub → Vercel : vérifiée OK** (`Settings → Git` du projet
+   montre `yyracine/ClinicBooking` connecté). Le push du commit du fix #4
+   avait bien déclenché un build automatique côté Git, mais il a échoué
+   (même cause que #3, `VLY_CONVEX_AUTH_ISSUER` pas encore corrigée à ce
+   moment-là) — l'historique des déploiements Vercel le confirme (icône
+   « branche » = déclenché par git push, vs icône « terminal » = déclenché
+   par `vercel --prod` en CLI). Le déploiement du commit de doc suivant
+   (`6407e97`) a bien été construit automatiquement sur push, sans action
+   manuelle. **Donc pas besoin de CLI pour les prochains déploiements** :
+   un simple `git push` sur `main` suffit.
 6. **Données de démo semées en prod** :
    `bunx convex run seedDemo:seedDemoData --prod` (action publique, pas de
    garde d'auth — même commande qu'en dev). Résultat :
