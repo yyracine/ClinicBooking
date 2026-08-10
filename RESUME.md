@@ -395,3 +395,11 @@ prochaine session.
 sont pas poussés sur la prod (l'app tourne en mode démo pour ces canaux,
 comme en dev) — à faire si on veut les emails/SMS/paiements mobiles réels
 en production.
+
+**Décisions utilisateur (10 août 2026)** : activation des e-mails (Elastic
+Email) **reportée** (« pour le moment je laisse tomber ») ; activation de
+Twilio (SMS) **reportée à plus tard** (« active twilio aussi plus tard »).
+Les deux restent donc en mode démo intentionnellement, pas par oubli — ne
+pas les activer sans redemander. Quand l'utilisateur relance le sujet :
+demander la clé API Elastic Email et/ou les identifiants Twilio (Account
+SID, Auth Token, numéro), puis `bunx convex env set NAME valeur --prod`.
