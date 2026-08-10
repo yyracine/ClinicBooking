@@ -58,13 +58,37 @@ describe("appointmentPrice", () => {
     ).toBe(30000);
   });
 
-  it("falls back to the service price", () => {
+  it("falls back to the service price without a grid", () => {
     expect(
       appointmentPrice({
         doctor: {},
         service: { price: 20000 },
       } as never),
     ).toBe(20000);
+  });
+
+  it("uses the pricing grid category when provided", () => {
+    const grid = {
+      generalisteMedecin: 10000,
+      generalisteProfesseur: 15000,
+      specialisteMedecin: 20000,
+      specialisteProfesseur: 30000,
+    };
+    expect(
+      appointmentPrice(
+        {
+          doctor: { academicRank: "professeur" },
+          service: { price: 5000, isGeneralist: false },
+        } as never,
+        grid,
+      ),
+    ).toBe(30000);
+  });
+
+  it("returns 0 when the doctor or service is missing", () => {
+    expect(appointmentPrice({ doctor: null, service: null } as never)).toBe(
+      0,
+    );
   });
 });
 

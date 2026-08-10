@@ -1,4 +1,9 @@
-import type { InsuranceLike } from "@/lib/pricing";
+import {
+  resolveConsultationPrice,
+  type AcademicRank,
+  type InsuranceLike,
+  type PricingGrid,
+} from "@/lib/pricing";
 import { Id } from "@/convex/_generated/dataModel";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -137,8 +142,9 @@ export interface AppointmentWithDetails {
     name: string;
     title: string;
     color: string;
-    /** Consultation price set on the doctor's fiche (FCFA). */
+    /** Exceptional per-doctor tariff (FCFA) — primes over the pricing grid. */
     consultationPrice?: number;
+    academicRank?: AcademicRank;
   } | null;
   service: {
     name: string;
@@ -146,12 +152,20 @@ export interface AppointmentWithDetails {
     price: number;
     icon: string;
     color: string;
+    isGeneralist?: boolean;
   } | null;
 }
 
-/** Effective price of an appointment: the doctor's tariff, else the service's. */
-export function appointmentPrice(a: AppointmentWithDetails): number {
-  return a.doctor?.consultationPrice ?? a.service?.price ?? 0;
+/**
+ * Effective price of an appointment: the doctor's exceptional tariff, else
+ * the clinic's category pricing grid, else the service's own price.
+ */
+export function appointmentPrice(
+  a: AppointmentWithDetails,
+  grid?: PricingGrid | null,
+): number {
+  if (!a.doctor || !a.service) return 0;
+  return resolveConsultationPrice(a.doctor, a.service, grid);
 }
 
 /** Appointment with patient details joined (staff view). */
