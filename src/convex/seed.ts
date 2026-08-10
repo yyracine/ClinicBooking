@@ -1,4 +1,9 @@
-import { STAFF_PASSWORD_DEFAULT, STAFF_PASSWORD_KEY } from "./settings";
+import {
+  PRICING_GRID_KEY,
+  STAFF_PASSWORD_DEFAULT,
+  STAFF_PASSWORD_KEY,
+} from "./settings";
+import { DEFAULT_PRICING_GRID } from "../lib/pricing";
 import { Id } from "./_generated/dataModel";
 import { mutation } from "./_generated/server";
 
@@ -17,6 +22,7 @@ const SEED_SERVICES = [
     price: 10000, // FCFA
     icon: "stethoscope",
     color: "teal",
+    isGeneralist: true,
   },
   {
     key: "cardio",
@@ -212,6 +218,19 @@ export const ensureSeedData = mutation({
       await ctx.db.insert("clinicSettings", {
         key: STAFF_PASSWORD_KEY,
         value: STAFF_PASSWORD_DEFAULT,
+      });
+    }
+
+    // Clinic settings: seed the default pricing grid — never overwrites a
+    // grid the administration has already customized.
+    const pricingGridRow = await ctx.db
+      .query("clinicSettings")
+      .withIndex("by_key", (q) => q.eq("key", PRICING_GRID_KEY))
+      .unique();
+    if (!pricingGridRow) {
+      await ctx.db.insert("clinicSettings", {
+        key: PRICING_GRID_KEY,
+        value: JSON.stringify(DEFAULT_PRICING_GRID),
       });
     }
 
