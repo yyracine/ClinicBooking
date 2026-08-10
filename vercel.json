@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "bunx convex deploy --cmd 'bun run build'",
+  "buildCommand": "bunx convex codegen && bunx convex deploy --cmd 'bun run build'",
   "installCommand": "bun install",
   "outputDirectory": "dist",
   "rewrites": [
