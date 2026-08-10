@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { computePatientShare } from "./pricing";
+import {
+  computePatientShare,
+  resolveConsultationPrice,
+  type PricingGrid,
+} from "./pricing";
 
 describe("computePatientShare", () => {
   const PRICE = 25000;
@@ -46,5 +50,66 @@ describe("computePatientShare", () => {
   it("treats missing insurance data as full price", () => {
     expect(computePatientShare(PRICE, null)).toBe(PRICE);
     expect(computePatientShare(PRICE, undefined)).toBe(PRICE);
+  });
+});
+
+describe("resolveConsultationPrice", () => {
+  const GRID: PricingGrid = {
+    generalisteMedecin: 10000,
+    generalisteProfesseur: 15000,
+    specialisteMedecin: 20000,
+    specialisteProfesseur: 30000,
+  };
+
+  it("généraliste + médecin (grade par défaut)", () => {
+    expect(
+      resolveConsultationPrice({}, { price: 5000, isGeneralist: true }, GRID),
+    ).toBe(10000);
+  });
+
+  it("généraliste + professeur", () => {
+    expect(
+      resolveConsultationPrice(
+        { academicRank: "professeur" },
+        { price: 5000, isGeneralist: true },
+        GRID,
+      ),
+    ).toBe(15000);
+  });
+
+  it("spécialiste + médecin (isGeneralist absent = spécialiste)", () => {
+    expect(resolveConsultationPrice({}, { price: 5000 }, GRID)).toBe(20000);
+  });
+
+  it("spécialiste + professeur", () => {
+    expect(
+      resolveConsultationPrice(
+        { academicRank: "professeur" },
+        { price: 5000, isGeneralist: false },
+        GRID,
+      ),
+    ).toBe(30000);
+  });
+
+  it("le tarif personnalisé du médecin prime toujours sur la grille", () => {
+    expect(
+      resolveConsultationPrice(
+        { consultationPrice: 99000, academicRank: "professeur" },
+        { price: 5000, isGeneralist: true },
+        GRID,
+      ),
+    ).toBe(99000);
+  });
+
+  it("retombe sur le prix du service quand la grille est absente", () => {
+    expect(resolveConsultationPrice({}, { price: 12000 }, null)).toBe(12000);
+    expect(resolveConsultationPrice({}, { price: 12000 }, undefined)).toBe(
+      12000,
+    );
+  });
+
+  it("retombe sur le prix du service si une cellule de la grille est manquante", () => {
+    const partial = { ...GRID, specialisteMedecin: undefined } as never;
+    expect(resolveConsultationPrice({}, { price: 7000 }, partial)).toBe(7000);
   });
 });

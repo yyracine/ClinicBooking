@@ -27,3 +27,52 @@ export function computePatientShare(
   if (rate == null) return price;
   return Math.max(0, Math.round((price * (100 - rate)) / 100));
 }
+
+export type AcademicRank = "medecin" | "professeur";
+
+/** La grille tarifaire à 4 catégories de la clinique (FCFA). */
+export interface PricingGrid {
+  generalisteMedecin: number;
+  generalisteProfesseur: number;
+  specialisteMedecin: number;
+  specialisteProfesseur: number;
+}
+
+/** Valeurs de secours tant que l'administration n'a pas configuré sa grille. */
+export const DEFAULT_PRICING_GRID: PricingGrid = {
+  generalisteMedecin: 10000,
+  generalisteProfesseur: 15000,
+  specialisteMedecin: 20000,
+  specialisteProfesseur: 30000,
+};
+
+/**
+ * Prix effectif d'une consultation pour un couple médecin + service.
+ *
+ * 1. `doctor.consultationPrice` renseigné → tarif exceptionnel, prime
+ *    toujours (ex. médecin sollicité pour une intervention particulière).
+ * 2. Sinon, recherche dans `grid` selon la catégorie (service.isGeneralist ×
+ *    grade du médecin).
+ * 3. Sinon (grille absente ou cellule manquante) → prix du service, pour
+ *    qu'une consultation ne se retrouve jamais à 0 FCFA par accident.
+ */
+export function resolveConsultationPrice(
+  doctor: { consultationPrice?: number; academicRank?: AcademicRank },
+  service: { price: number; isGeneralist?: boolean },
+  grid: PricingGrid | null | undefined,
+): number {
+  if (doctor.consultationPrice != null) return doctor.consultationPrice;
+  if (grid) {
+    const rank = doctor.academicRank ?? "medecin";
+    const key: keyof PricingGrid = service.isGeneralist
+      ? rank === "professeur"
+        ? "generalisteProfesseur"
+        : "generalisteMedecin"
+      : rank === "professeur"
+        ? "specialisteProfesseur"
+        : "specialisteMedecin";
+    const value = grid[key];
+    if (value != null) return value;
+  }
+  return service.price;
+}
