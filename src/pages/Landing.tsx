@@ -67,10 +67,8 @@ interface DoctorInfo {
   color: string;
   bio?: string;
   phone?: string;
-  consultationPrice?: number;
   schedule?: DoctorScheduleEntry[];
   serviceName?: string;
-  servicePrice?: number;
 }
 
 const FALLBACK_SERVICES: ServiceInfo[] = [
@@ -136,9 +134,7 @@ const FALLBACK_DOCTORS: DoctorInfo[] = [
     color: "teal",
     bio: "Plus de 12 ans d'expérience en médecine de famille.",
     phone: "+225 07 00 01 02 03",
-    consultationPrice: 10000,
     serviceName: "Médecine générale",
-    servicePrice: 10000,
   },
   {
     name: "Dr Sophie Dubois",
@@ -146,9 +142,7 @@ const FALLBACK_DOCTORS: DoctorInfo[] = [
     color: "rose",
     bio: "Spécialiste du suivi de l'insuffisance cardiaque.",
     phone: "+225 07 00 01 02 05",
-    consultationPrice: 25000,
     serviceName: "Cardiologie",
-    servicePrice: 25000,
   },
   {
     name: "Dr Léa Fontaine",
@@ -156,9 +150,7 @@ const FALLBACK_DOCTORS: DoctorInfo[] = [
     color: "amber",
     bio: "Passionnée de dermatologie esthétique.",
     phone: "+225 07 00 01 02 07",
-    consultationPrice: 15000,
     serviceName: "Dermatologie",
-    servicePrice: 15000,
   },
   {
     name: "Dr Chloé Bernard",
@@ -166,9 +158,7 @@ const FALLBACK_DOCTORS: DoctorInfo[] = [
     color: "violet",
     bio: "À l'écoute des tout-petits et de leurs parents.",
     phone: "+225 07 00 01 02 09",
-    consultationPrice: 12000,
     serviceName: "Pédiatrie",
-    servicePrice: 12000,
   },
   {
     name: "Dr Emma Rousseau",
@@ -176,9 +166,7 @@ const FALLBACK_DOCTORS: DoctorInfo[] = [
     color: "sky",
     bio: "Soins conservateurs et prévention, sans douleur.",
     phone: "+225 07 00 01 02 11",
-    consultationPrice: 18000,
     serviceName: "Dentisterie",
-    servicePrice: 18000,
   },
   {
     name: "Dr Inès Lambert",
@@ -186,9 +174,7 @@ const FALLBACK_DOCTORS: DoctorInfo[] = [
     color: "indigo",
     bio: "Dépistage du glaucome et suivi de la myopie.",
     phone: "+225 07 00 01 02 13",
-    consultationPrice: 15000,
     serviceName: "Ophtalmologie",
-    servicePrice: 15000,
   },
 ];
 
@@ -254,10 +240,8 @@ export default function Landing() {
         color: d.color,
         bio: d.bio,
         phone: d.phone,
-        consultationPrice: d.consultationPrice,
         schedule: d.schedule,
         serviceName: service?.name,
-        servicePrice: service?.price,
       };
     });
   }, [doctorsQuery, servicesQuery]);
@@ -729,7 +713,6 @@ export default function Landing() {
         ) : (
           <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {doctors.map((d, i) => {
-              const price = d.consultationPrice ?? d.servicePrice;
               return (
                 <motion.div
                   key={d._id ?? d.name}
@@ -762,16 +745,9 @@ export default function Landing() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {d.serviceName ?? d.title}
                   </p>
-                  {price != null ? (
-                    <p className="mt-2 flex items-center gap-1 text-sm font-bold text-primary">
-                      <Coins className="size-3.5" />
-                      {formatPrice(price)}
-                    </p>
-                  ) : (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Tarif à la réservation
-                    </p>
-                  )}
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Tarif communiqué à la réservation
+                  </p>
                   <Button
                     type="button"
                     variant="ghost"
@@ -980,7 +956,6 @@ function DoctorSheet({
   doctor: DoctorInfo;
   onClose: () => void;
 }) {
-  const price = doctor.consultationPrice ?? doctor.servicePrice;
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -1019,8 +994,8 @@ function DoctorSheet({
             <Coins className="size-4 text-primary" />
             Consultation
           </span>
-          <span className="text-lg font-bold tracking-tight text-primary">
-            {price != null ? formatPrice(price) : "Tarif à la réservation"}
+          <span className="text-sm font-medium text-muted-foreground">
+            Tarif communiqué à la réservation
           </span>
         </div>
 
