@@ -6,7 +6,8 @@ import { appointmentStatusValidator } from "./schema";
 import { Id } from "./_generated/dataModel";
 import { MutationCtx, QueryCtx, mutation, query } from "./_generated/server";
 import { logActivity } from "./log";
-import { computePatientShare } from "../lib/pricing";
+import { computePatientShare, resolveConsultationPrice } from "../lib/pricing";
+import { getPricingGrid } from "./settings";
 import {
   canCancelFree,
   isPastDateKey,
@@ -152,6 +153,7 @@ export const myAppointments = query({
                 title: doctor.title,
                 color: doctor.color,
                 consultationPrice: doctor.consultationPrice,
+                academicRank: doctor.academicRank,
               }
             : null,
           service: service
@@ -161,6 +163,7 @@ export const myAppointments = query({
                 price: service.price,
                 icon: service.icon,
                 color: service.color,
+                isGeneralist: service.isGeneralist,
               }
             : null,
         };
@@ -210,6 +213,7 @@ export const allAppointments = query({
                 title: doctor.title,
                 color: doctor.color,
                 consultationPrice: doctor.consultationPrice,
+                academicRank: doctor.academicRank,
               }
             : null,
           service: service
@@ -219,6 +223,7 @@ export const allAppointments = query({
                 price: service.price,
                 icon: service.icon,
                 color: service.color,
+                isGeneralist: service.isGeneralist,
               }
             : null,
           patient: {
@@ -440,10 +445,13 @@ export const recordPayment = mutation({
     const service = await ctx.db.get(appointment.serviceId);
     if (!service) throw new Error("Service introuvable.");
 
-    // The price of the consultation is set on the doctor's fiche; fall back
-    // to the service price when the fiche has no tariff yet.
+    // The price of the consultation follows the doctor's own tariff if set,
+    // else the clinic's category pricing grid, else the service price.
     const doctor = await ctx.db.get(appointment.doctorId);
-    const price = doctor?.consultationPrice ?? service.price;
+    const grid = await getPricingGrid(ctx.db);
+    const price = doctor
+      ? resolveConsultationPrice(doctor, service, grid)
+      : service.price;
 
     const profile = await ctx.db
       .query("patientProfiles")

@@ -3,7 +3,8 @@ import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { action, mutation, query } from "./_generated/server";
-import { computePatientShare } from "../lib/pricing";
+import { computePatientShare, resolveConsultationPrice } from "../lib/pricing";
+import { getPricingGrid } from "./settings";
 import { reminderScheduleTimes } from "../lib/booking";
 import { logActivity } from "./log";
 
@@ -82,16 +83,18 @@ export const getAppointmentPaymentInfo = query({
     const appointment = await ctx.db.get(args.appointmentId);
     if (!appointment) return null;
 
-    const [doctor, service, profile] = await Promise.all([
+    const [doctor, service, profile, grid] = await Promise.all([
       ctx.db.get(appointment.doctorId),
       ctx.db.get(appointment.serviceId),
       ctx.db
         .query("patientProfiles")
         .withIndex("by_user", (q) => q.eq("userId", appointment.userId))
         .first(),
+      getPricingGrid(ctx.db),
     ]);
 
-    const price = doctor?.consultationPrice ?? service?.price ?? 0;
+    const price =
+      doctor && service ? resolveConsultationPrice(doctor, service, grid) : 0;
     const amount = computePatientShare(price, profile);
 
     return {
@@ -260,19 +263,19 @@ export const recordMobilePayment = mutation({
       throw new Error("Ce rendez-vous est annulé.");
     }
 
-    const [doctor, service, profile] = await Promise.all([
+    const [doctor, service, profile, grid] = await Promise.all([
       ctx.db.get(appointment.doctorId),
       ctx.db.get(appointment.serviceId),
       ctx.db
         .query("patientProfiles")
         .withIndex("by_user", (q) => q.eq("userId", appointment.userId))
         .first(),
+      getPricingGrid(ctx.db),
     ]);
 
-    const amountPaid = computePatientShare(
-      doctor?.consultationPrice ?? service?.price ?? 0,
-      profile,
-    );
+    const mobilePrice =
+      doctor && service ? resolveConsultationPrice(doctor, service, grid) : 0;
+    const amountPaid = computePatientShare(mobilePrice, profile);
 
     await ctx.db.patch(args.appointmentId, {
       status: "confirmed",
