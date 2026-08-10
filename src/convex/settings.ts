@@ -1,5 +1,6 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
+import type { PricingGrid } from "../lib/pricing";
 import {
   DatabaseReader,
   DatabaseWriter,
@@ -74,5 +75,97 @@ export const updateStaffPassword = mutation({
       );
     }
     await setStaffPassword(ctx.db, args.newPassword);
+  },
+});
+
+/**
+ * Grille tarifaire de la consultation (4 catégories), gérée par
+ * l'administration. Stockée comme une ligne JSON dans `clinicSettings`,
+ * même principe que le mot de passe partagé ci-dessus.
+ */
+
+export const PRICING_GRID_KEY = "pricingGrid";
+
+/** Current pricing grid, or null when the administration hasn't set it yet. */
+export async function getPricingGrid(
+  db: DatabaseReader,
+): Promise<PricingGrid | null> {
+  const row = await db
+    .query("clinicSettings")
+    .withIndex("by_key", (q) => q.eq("key", PRICING_GRID_KEY))
+    .unique();
+  if (!row) return null;
+  try {
+    return JSON.parse(row.value) as PricingGrid;
+  } catch {
+    return null;
+  }
+}
+
+export async function setPricingGrid(db: DatabaseWriter, grid: PricingGrid) {
+  const row = await db
+    .query("clinicSettings")
+    .withIndex("by_key", (q) => q.eq("key", PRICING_GRID_KEY))
+    .unique();
+  const value = JSON.stringify(grid);
+  if (row) {
+    await db.patch(row._id, { value });
+  } else {
+    await db.insert("clinicSettings", { key: PRICING_GRID_KEY, value });
+  }
+}
+
+/** Current pricing grid (null if not yet configured by the administration). */
+export const pricingGrid = query({
+  args: {},
+  handler: async (ctx) => {
+    return await getPricingGrid(ctx.db);
+  },
+});
+
+function cleanGridValue(value: number, label: string): number {
+  if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
+    throw new Error(
+      `Indiquez un tarif valide (FCFA, sans décimales) pour ${label}.`,
+    );
+  }
+  return value;
+}
+
+/** Staff: set the 4-category consultation pricing grid. */
+export const updatePricingGrid = mutation({
+  args: {
+    generalisteMedecin: v.number(),
+    generalisteProfesseur: v.number(),
+    specialisteMedecin: v.number(),
+    specialisteProfesseur: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Vous devez être connecté.");
+    }
+    const user = await ctx.db.get<"users">(userId);
+    if (user?.role !== "staff") {
+      throw new Error("Accès réservé à l'administration de la clinique.");
+    }
+    await setPricingGrid(ctx.db, {
+      generalisteMedecin: cleanGridValue(
+        args.generalisteMedecin,
+        "Généraliste · Médecin",
+      ),
+      generalisteProfesseur: cleanGridValue(
+        args.generalisteProfesseur,
+        "Généraliste · Professeur",
+      ),
+      specialisteMedecin: cleanGridValue(
+        args.specialisteMedecin,
+        "Spécialiste · Médecin",
+      ),
+      specialisteProfesseur: cleanGridValue(
+        args.specialisteProfesseur,
+        "Spécialiste · Professeur",
+      ),
+    });
   },
 });
