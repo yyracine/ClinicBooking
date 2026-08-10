@@ -267,6 +267,18 @@ export const ensureSeedData = mutation({
           }
         }
       }
+      // isGeneralist migration: backfill on services seeded before this
+      // field existed (matches Task 6's SEED_SERVICES flag by name) — without
+      // this, a "Médecine générale" service inserted pre-feature would keep
+      // isGeneralist undefined forever, misclassifying every généraliste
+      // doctor as spécialiste for pricing-grid purposes.
+      for (const s of existing) {
+        const seed = SEED_SERVICES.find((x) => x.name === s.name);
+        if (seed?.isGeneralist && s.isGeneralist == null) {
+          await ctx.db.patch(s._id, { isGeneralist: true });
+        }
+      }
+
       // Doctor fiche migration: fill contact info + working hours on
       // doctors created before the fiche existed.
       const doctors = await ctx.db.query("doctors").collect();
