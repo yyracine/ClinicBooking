@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,6 +33,12 @@ import {
   toDateKey,
   type DoctorScheduleEntry,
 } from "@/lib/clinic";
+import {
+  DEFAULT_PRICING_GRID,
+  resolveConsultationPrice,
+  type AcademicRank,
+  type PricingGrid,
+} from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import {
@@ -59,6 +66,7 @@ interface DoctorDoc {
   bio: string;
   phone?: string;
   consultationPrice?: number;
+  academicRank?: AcademicRank;
   schedule?: DoctorScheduleEntry[];
   color: string;
 }
@@ -70,6 +78,9 @@ interface DoctorForm {
   title: string;
   bio: string;
   phone: string;
+  academicRank: AcademicRank;
+  /** Whether the exceptional per-doctor tariff input is shown/used. */
+  hasCustomPrice: boolean;
   /** Consultation price, kept as a string while editing the input. */
   consultationPrice: string;
   schedule: DoctorScheduleEntry[];
@@ -82,6 +93,8 @@ const EMPTY_FORM: DoctorForm = {
   title: "",
   bio: "",
   phone: "",
+  academicRank: "medecin",
+  hasCustomPrice: false,
   consultationPrice: "",
   schedule: [],
 };
@@ -90,6 +103,7 @@ export function StaffDoctors() {
   const doctors = useQuery(api.catalog.listDoctors);
   const services = useQuery(api.catalog.listServices);
   const offDays = useQuery(api.doctors.listDoctorOffDays);
+  const grid = useQuery(api.settings.pricingGrid);
   const createDoctor = useMutation(api.doctors.createDoctor);
   const updateDoctor = useMutation(api.doctors.updateDoctor);
 
@@ -103,12 +117,17 @@ export function StaffDoctors() {
   const serviceName = (serviceId: Id<"services">) =>
     services?.find((s) => s._id === serviceId)?.name ?? "—";
 
+  const serviceOf = (serviceId: Id<"services">) =>
+    services?.find((s) => s._id === serviceId);
+
   const handleSaved = () => {
     setDialog(null);
   };
 
   return (
     <div className="space-y-5">
+      <PricingGridPanel grid={grid} />
+
       {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
@@ -201,14 +220,29 @@ export function StaffDoctors() {
                 </p>
                 <p className="flex items-center gap-2 text-muted-foreground">
                   <Coins className="size-3.5 shrink-0 text-primary" />
-                  {d.consultationPrice != null ? (
-                    <span className="font-semibold text-foreground">
-                      {formatPrice(d.consultationPrice)}
-                    </span>
-                  ) : (
-                    "Tarif non renseigné"
-                  )}
+                  {(() => {
+                    const service = serviceOf(d.serviceId);
+                    const price = service
+                      ? resolveConsultationPrice(d, service, grid)
+                      : undefined;
+                    return (
+                      <span className="font-semibold text-foreground">
+                        {price != null ? formatPrice(price) : "—"}
+                      </span>
+                    );
+                  })()}
                   <span>la consultation</span>
+                  {d.consultationPrice != null && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                      tarif personnalisé
+                    </span>
+                  )}
+                </p>
+                <p className="text-[11px] font-medium text-muted-foreground">
+                  {serviceOf(d.serviceId)?.isGeneralist
+                    ? "Généraliste"
+                    : "Spécialiste"}{" "}
+                  · {d.academicRank === "professeur" ? "Professeur" : "Médecin"}
                 </p>
                 <div className="flex items-start gap-2 text-muted-foreground">
                   <CalendarClock className="mt-0.5 size-3.5 shrink-0 text-primary" />
@@ -229,6 +263,7 @@ export function StaffDoctors() {
           }
           doctor={dialog.mode === "edit" ? dialog.doctor : null}
           services={services ?? []}
+          grid={grid}
           onSave={async (form) => {
             const price = form.consultationPrice.trim();
             const payload = {
@@ -239,8 +274,11 @@ export function StaffDoctors() {
               bio: form.bio,
               phone: form.phone,
               schedule: form.schedule,
+              academicRank: form.academicRank,
               consultationPrice:
-                price === "" ? undefined : Number(price),
+                form.hasCustomPrice && price !== ""
+                  ? Number(price)
+                  : undefined,
             };
             if (dialog.mode === "edit") {
               await updateDoctor({
@@ -476,11 +514,13 @@ function OffDaysDialog({
 function DoctorDialog({
   doctor,
   services,
+  grid,
   onSave,
   onClose,
 }: {
   doctor: DoctorDoc | null;
-  services: { _id: Id<"services">; name: string }[];
+  services: { _id: Id<"services">; name: string; isGeneralist?: boolean; price: number }[];
+  grid: PricingGrid | null | undefined;
   onSave: (form: DoctorForm) => Promise<void>;
   onClose: () => void;
 }) {
@@ -493,6 +533,8 @@ function DoctorDialog({
           title: doctor.title ?? "",
           bio: doctor.bio ?? "",
           phone: doctor.phone ?? "",
+          academicRank: doctor.academicRank ?? "medecin",
+          hasCustomPrice: doctor.consultationPrice != null,
           consultationPrice:
             doctor.consultationPrice != null
               ? String(doctor.consultationPrice)
@@ -540,14 +582,18 @@ function DoctorDialog({
       setError("Choisissez la spécialité du médecin.");
       return;
     }
-    const price = Number(form.consultationPrice);
-    if (
-      !form.consultationPrice.trim() ||
-      !Number.isInteger(price) ||
-      price <= 0
-    ) {
-      setError("Indiquez le prix de la consultation en FCFA (sans décimales).");
-      return;
+    if (form.hasCustomPrice) {
+      const price = Number(form.consultationPrice);
+      if (
+        !form.consultationPrice.trim() ||
+        !Number.isInteger(price) ||
+        price <= 0
+      ) {
+        setError(
+          "Indiquez le tarif personnalisé en FCFA (sans décimales), ou décochez la case.",
+        );
+        return;
+      }
     }
     for (const e of form.schedule) {
       if (e.end <= e.start) {
@@ -649,24 +695,88 @@ function DoctorDialog({
             </Field>
           </div>
 
-          <Field label="Prix de la consultation (FCFA)">
-            <div className="relative">
-              <Coins className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="number"
-                min={0}
-                step={500}
-                inputMode="numeric"
-                value={form.consultationPrice}
-                onChange={(e) => set({ consultationPrice: e.target.value })}
-                placeholder="10 000"
-                className="pl-9"
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Type (déduit de la spécialité)">
+              <div className="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-foreground">
+                {services.find((s) => s._id === form.serviceId)?.isGeneralist
+                  ? "Généraliste"
+                  : "Spécialiste"}
+              </div>
+            </Field>
+            <Field label="Grade">
+              <Select
+                value={form.academicRank}
+                onValueChange={(v) =>
+                  set({ academicRank: v as AcademicRank })
+                }
+                disabled={saving}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="medecin">Médecin</SelectItem>
+                  <SelectItem value="professeur">Professeur</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+
+          <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-muted/30 px-4 py-3">
+            <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Coins className="size-4 text-primary" />
+              Prix de la consultation
+            </span>
+            <span className="text-sm font-bold text-foreground">
+              {(() => {
+                const selectedService = services.find(
+                  (s) => s._id === form.serviceId,
+                );
+                if (!selectedService) return "—";
+                const price = form.hasCustomPrice
+                  ? Number(form.consultationPrice) || 0
+                  : resolveConsultationPrice(
+                      { academicRank: form.academicRank },
+                      selectedService,
+                      grid ?? DEFAULT_PRICING_GRID,
+                    );
+                return formatPrice(price);
+              })()}
+            </span>
+          </div>
+
+          <Field label="">
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <Checkbox
+                checked={form.hasCustomPrice}
+                onCheckedChange={(checked) =>
+                  set({ hasCustomPrice: checked === true })
+                }
                 disabled={saving}
               />
-            </div>
+              Tarif personnalisé pour ce médecin (intervention particulière)
+            </label>
+            {form.hasCustomPrice && (
+              <div className="relative mt-2">
+                <Coins className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="number"
+                  min={0}
+                  step={500}
+                  inputMode="numeric"
+                  value={form.consultationPrice}
+                  onChange={(e) =>
+                    set({ consultationPrice: e.target.value })
+                  }
+                  placeholder="10 000"
+                  className="pl-9"
+                  disabled={saving}
+                />
+              </div>
+            )}
             <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
-              Montant en FCFA, sans décimales. Il s'affiche aux patients lors
-              de la réservation et sert au calcul du paiement.
+              Sans case cochée, le prix suit automatiquement la grille
+              tarifaire de la clinique selon le type et le grade ci-dessus.
             </p>
           </Field>
 
@@ -816,5 +926,103 @@ function Field({
       </Label>
       {children}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Pricing grid (grille tarifaire)                                     */
+/* ------------------------------------------------------------------ */
+
+const GRID_FIELDS: { key: keyof PricingGrid; label: string }[] = [
+  { key: "generalisteMedecin", label: "Généraliste · Médecin" },
+  { key: "generalisteProfesseur", label: "Généraliste · Professeur" },
+  { key: "specialisteMedecin", label: "Spécialiste · Médecin" },
+  { key: "specialisteProfesseur", label: "Spécialiste · Professeur" },
+];
+
+function PricingGridPanel({
+  grid,
+}: {
+  grid: PricingGrid | null | undefined;
+}) {
+  const updatePricingGrid = useMutation(api.settings.updatePricingGrid);
+  const [form, setForm] = useState<Record<keyof PricingGrid, string>>(() => {
+    const base = grid ?? DEFAULT_PRICING_GRID;
+    return {
+      generalisteMedecin: String(base.generalisteMedecin),
+      generalisteProfesseur: String(base.generalisteProfesseur),
+      specialisteMedecin: String(base.specialisteMedecin),
+      specialisteProfesseur: String(base.specialisteProfesseur),
+    };
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updatePricingGrid({
+        generalisteMedecin: Number(form.generalisteMedecin),
+        generalisteProfesseur: Number(form.generalisteProfesseur),
+        specialisteMedecin: Number(form.specialisteMedecin),
+        specialisteProfesseur: Number(form.specialisteProfesseur),
+      });
+      toast.success("Grille tarifaire mise à jour.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Enregistrement impossible.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (grid === undefined) {
+    return <Skeleton className="h-32 rounded-2xl" />;
+  }
+
+  return (
+    <Card className="border-border/70 p-5 shadow-soft">
+      <p className="text-sm font-semibold text-foreground">
+        Grille tarifaire de la consultation
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Prix par défaut selon le type de médecin et son grade. Un médecin
+        peut avoir un tarif personnalisé (voir sa fiche) qui prime sur cette
+        grille.
+      </p>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {GRID_FIELDS.map(({ key, label }) => (
+          <div key={key}>
+            <Label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+              {label}
+            </Label>
+            <div className="relative">
+              <Coins className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="number"
+                min={0}
+                step={500}
+                inputMode="numeric"
+                value={form[key]}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, [key]: e.target.value }))
+                }
+                className="pl-9"
+                disabled={saving}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <Button
+        onClick={handleSave}
+        disabled={saving}
+        className="mt-4 rounded-full"
+        size="sm"
+      >
+        {saving && <Loader2 className="size-4 animate-spin" />}
+        Enregistrer la grille
+      </Button>
+    </Card>
   );
 }
