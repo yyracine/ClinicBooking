@@ -344,15 +344,52 @@ prochaine session.
    - `installCommand: "bun install"` (explicite car le repo a `bun.lock`
      **et** `package-lock.json` — évite toute ambiguïté de détection Vercel).
 
-### À faire à la prochaine session (déploiement Vercel)
+### Déploiement Vercel — terminé (10 août 2026)
 
-- [ ] Créer le projet sur Vercel (import depuis `yyracine/ClinicBooking`).
-- [ ] Générer une **`CONVEX_DEPLOY_KEY`** (dashboard Convex → Settings →
-      Production) et l'ajouter en variable d'env sur le projet Vercel.
-- [ ] Repousser les secrets serveur sur le déploiement **`--prod`** (jamais
-      copiés automatiquement entre déploiements) :
-      `JWT_PRIVATE_KEY`, `JWKS` (mêmes clés ou nouvelle paire — à décider),
-      puis `ELASTICEMAIL_API_KEY` / `TWILIO_*` / `CINETPAY_*` si on veut les
-      canaux réels en prod plutôt qu'en mode démo.
-- [ ] Premier déploiement Vercel, vérifier build + connexion + réservation
-      de bout en bout sur l'URL de prod.
+**Prod en ligne : https://clinic-booking-ashen.vercel.app**
+
+1. Projet Vercel créé (import `yyracine/ClinicBooking`, équipe
+   `assables-projects`, nom de projet `clinic-booking`).
+2. `CONVEX_DEPLOY_KEY` (déploiement prod `disciplined-stingray-549`) générée
+   côté Convex et ajoutée en variable d'env Vercel — **scope "Production"
+   uniquement** (jamais "Preview", sinon chaque preview de PR redéploierait
+   vers la prod Convex).
+3. Secrets poussés sur Convex `--prod` :
+   - `JWT_PRIVATE_KEY` / `JWKS` : **nouvelle paire RS256** générée avec
+     `jose` (dédiée à la prod, différente de celle du dev), poussée via
+     `bunx convex env set NAME --from-file fichier --prod`.
+   - `VLY_CONVEX_AUTH_ISSUER=https://freebuff.com` : requis par
+     `auth.config.ts` (le CLI Convex exige que toute variable référencée
+     dans `auth.config.ts` soit explicitement définie sur le déploiement,
+     même si le code a un `?? "fallback"` JS) — même valeur que le dev.
+4. **Bug de build corrigé** : `vercel.json` faisait
+   `bunx convex deploy --cmd 'bun run build'`. Or `convex deploy --cmd`
+   exécute la commande **avant** de régénérer `convex/_generated/` (ordre
+   documenté par `convex deploy --help` : cmd → typecheck → codegen →
+   bundle → push). Comme `_generated/` est gitignored (jamais committé) et
+   que `bun run build` fait `tsc -b && vite build`, le typecheck échouait
+   systématiquement sur un checkout neuf (« Cannot find module
+   `./_generated/...` »). **Fix** : `buildCommand` devient
+   `bunx convex codegen && bunx convex deploy --cmd 'bun run build'`
+   (`convex codegen` régénère `_generated/` localement, sans push, avant le
+   build).
+5. **Intégration GitHub → Vercel non fonctionnelle** : un push sur `main`
+   après le fix ci-dessus n'a déclenché aucun nouveau build (webhook/accès
+   repo pas complètement configuré côté Vercel). Contournement : CLI Vercel
+   (`bunx vercel link` puis `bunx vercel --prod`) pour déployer directement
+   depuis le poste local — a fonctionné du premier coup après le fix #4.
+   **Reste à faire** : vérifier `Settings → Git` sur le projet Vercel pour
+   rebrancher le déploiement automatique sur push (sinon chaque changement
+   futur doit être déployé manuellement via `bunx vercel --prod`).
+6. **Données de démo semées en prod** :
+   `bunx convex run seedDemo:seedDemoData --prod` (action publique, pas de
+   garde d'auth — même commande qu'en dev). Résultat :
+   `patients:3, visits:7, appointments:3`.
+7. **Vérifié de bout en bout** (navigateur) : landing page, page `/auth`,
+   connexion avec le compte démo (`demo@clinic-bookings.local` /
+   `demo1234`) → dashboard patient chargé avec les services et l'historique.
+
+**Reste optionnel** : `ELASTICEMAIL_API_KEY` / `TWILIO_*` / `CINETPAY_*` ne
+sont pas poussés sur la prod (l'app tourne en mode démo pour ces canaux,
+comme en dev) — à faire si on veut les emails/SMS/paiements mobiles réels
+en production.
