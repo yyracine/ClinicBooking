@@ -30,13 +30,14 @@ export function MyAppointments({ onBook }: { onBook: () => void }) {
   const waiting = useQuery(api.waitingList.myWaitingList);
   const leaveWaitingList = useMutation(api.waitingList.leaveWaitingList);
   const profile = useQuery(api.records.myProfile);
+  const grid = useQuery(api.settings.pricingGrid);
   const [filter, setFilter] = useState<FilterKey>("upcoming");
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [leavingId, setLeavingId] = useState<string | null>(null);
 
   const handleReceipt = (a: AppointmentWithDetails) => {
     if (a.amountPaid == null) return;
-    const price = appointmentPrice(a);
+    const price = appointmentPrice(a, grid);
     downloadAppointmentReceipt({
       patientName: profile
         ? `${profile.firstName} ${profile.lastName}`
@@ -231,6 +232,7 @@ export function MyAppointments({ onBook }: { onBook: () => void }) {
             <AppointmentCard
               key={a._id}
               appointment={a}
+              grid={grid}
               actions={
                 <div className="flex items-center gap-1">
                   {a.amountPaid != null &&

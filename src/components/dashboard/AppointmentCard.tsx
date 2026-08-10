@@ -11,6 +11,7 @@ import {
   serviceIcon,
   type AppointmentWithDetails,
 } from "@/lib/clinic";
+import type { PricingGrid } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { CircleCheck } from "lucide-react";
 import { format, parseISO } from "date-fns";
@@ -22,12 +23,14 @@ export function AppointmentCard({
   actions,
   override,
   className,
+  grid,
 }: {
   appointment: AppointmentWithDetails;
   actions?: ReactNode;
   /** When provided (staff view), replaces the doctor block with a person block. */
   override?: { title: string; subtitle: string; tint: string };
   className?: string;
+  grid?: PricingGrid | null;
 }) {
   const doctor = appointment.doctor;
   const service = appointment.service;
@@ -94,7 +97,7 @@ export function AppointmentCard({
                   {service && (
                     <span className="hidden sm:inline">
                       {" "}
-                      · {formatPrice(appointmentPrice(appointment))}
+                      · {formatPrice(appointmentPrice(appointment, grid))}
                     </span>
                   )}
                 </span>

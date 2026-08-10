@@ -18,6 +18,7 @@ import {
   serviceTint,
   toDateKey,
 } from "@/lib/clinic";
+import { resolveConsultationPrice } from "@/lib/pricing";
 import { useMutation, useQuery } from "convex/react";
 import { startOfToday } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -79,6 +80,7 @@ export function BookAppointment({
   const navigate = useNavigate();
   const services = useQuery(api.catalog.listServices);
   const doctors = useQuery(api.catalog.listDoctors);
+  const grid = useQuery(api.settings.pricingGrid);
 
   const [serviceId, setServiceId] = useState<Id<"services"> | null>(null);
   const [doctorId, setDoctorId] = useState<Id<"doctors"> | null>(null);
@@ -176,7 +178,11 @@ export function BookAppointment({
         doctor: selectedDoctor.name,
         date,
         time,
-        price: selectedDoctor.consultationPrice ?? selectedService.price,
+        price: resolveConsultationPrice(
+          selectedDoctor,
+          selectedService,
+          grid,
+        ),
         durationMinutes: selectedService.durationMinutes,
       });
       toast.success("Rendez-vous enregistré !");
@@ -427,9 +433,15 @@ export function BookAppointment({
                       </span>
                       <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
                         <Coins className="size-3.5 text-primary" />
-                        {d.consultationPrice != null
-                          ? formatPrice(d.consultationPrice)
-                          : formatPrice(selectedService?.price ?? 0)}
+                        {selectedService
+                          ? formatPrice(
+                              resolveConsultationPrice(
+                                d,
+                                selectedService,
+                                grid,
+                              ),
+                            )
+                          : "—"}
                         <span className="font-normal text-muted-foreground">
                           la consultation
                         </span>
@@ -592,11 +604,17 @@ export function BookAppointment({
           <div className="mt-4 flex items-center justify-between border-t border-border/70 pt-4 text-sm">
             <span className="text-muted-foreground">Total</span>
             <span className="font-bold text-foreground">
-              {selectedService
+              {selectedService && selectedDoctor
                 ? formatPrice(
-                    selectedDoctor?.consultationPrice ?? selectedService.price,
+                    resolveConsultationPrice(
+                      selectedDoctor,
+                      selectedService,
+                      grid,
+                    ),
                   )
-                : "—"}
+                : selectedService
+                  ? formatPrice(selectedService.price)
+                  : "—"}
             </span>
           </div>
 

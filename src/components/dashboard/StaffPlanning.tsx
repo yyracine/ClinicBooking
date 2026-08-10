@@ -87,6 +87,7 @@ type FilterKey = (typeof FILTERS)[number]["key"];
 
 export function StaffPlanning() {
   const items = useQuery(api.appointments.allAppointments);
+  const grid = useQuery(api.settings.pricingGrid);
   const offDays = useQuery(api.doctors.listDoctorOffDays);
   const updateStatus = useMutation(api.appointments.updateAppointmentStatus);
   const waitingList = useQuery(api.waitingList.staffWaitingList);
@@ -454,7 +455,7 @@ export function StaffPlanning() {
                           <span className="text-sm font-bold text-foreground">
                             {formatPrice(
                               computePatientShare(
-                                appointmentPrice(a),
+                                appointmentPrice(a, grid),
                                 a.insurance,
                               ),
                             )}
@@ -586,6 +587,7 @@ function PaymentDialog({
 }) {
   const recordPayment = useMutation(api.appointments.recordPayment);
   const integration = useQuery(api.payments.getIntegrationStatus);
+  const grid = useQuery(api.settings.pricingGrid);
   const requestMobilePayment = useAction(
     api.payments.createMobilePaymentRequest,
   );
@@ -597,7 +599,7 @@ function PaymentDialog({
     | null
   >(null);
 
-  const price = appointmentPrice(appointment);
+  const price = appointmentPrice(appointment, grid);
   const share = computePatientShare(price, appointment.insurance);
   const covered = price - share;
   const patientPhone = appointment.patient.phone;
