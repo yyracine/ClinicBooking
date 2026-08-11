@@ -28,7 +28,6 @@ import {
   Check,
   ChevronRight,
   Clock,
-  Coins,
   Home,
   Loader2,
   Search,
@@ -442,21 +441,6 @@ export function BookAppointment({
                       )}
                       <span className="mt-1 block text-xs leading-5 text-muted-foreground">
                         {d.bio}
-                      </span>
-                      <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                        <Coins className="size-3.5 text-primary" />
-                        {selectedService
-                          ? formatPrice(
-                              resolveConsultationPrice(
-                                d,
-                                selectedService,
-                                grid,
-                              ),
-                            )
-                          : "—"}
-                        <span className="font-normal text-muted-foreground">
-                          la consultation
-                        </span>
                       </span>
                     </span>
                   </button>
