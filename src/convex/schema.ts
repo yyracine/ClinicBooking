@@ -137,6 +137,11 @@ const schema = defineSchema(
       reimbursement100: v.optional(v.boolean()), // reimbursed at 100%
       tiersPayant: v.optional(v.boolean()), // third-party payment (no upfront fees)
       reimbursementRate: v.optional(v.number()), // reimbursement rate (%)
+
+      // Consent for reminder channels (opt-in, no reminders without explicit consent)
+      consentEmailReminders: v.optional(v.boolean()), // accept email reminders (non-encrypted, risk acknowledged)
+      consentSmsReminders: v.optional(v.boolean()), // accept SMS reminders
+      consentInAppReminders: v.optional(v.boolean()), // accept in-app notifications
     }).index("by_user", ["userId"]),
 
     // Medical file: one visit report per consultation.

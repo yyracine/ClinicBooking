@@ -336,8 +336,11 @@ interface AppointmentNotice {
 async function deliverAppointmentNotice(
   ctx: ActionCtx,
   notice: AppointmentNotice,
+  channels?: { email?: boolean; sms?: boolean; inApp?: boolean },
 ): Promise<{ email: SendResult; sms: SendResult }> {
-  if (notice.userId) {
+  const channels_ = channels ?? { email: true, sms: true, inApp: true };
+
+  if (channels_.inApp !== false && notice.userId) {
     await ctx.runMutation(api.notifications.create, {
       userId: notice.userId as never,
       type: notice.type,
@@ -348,17 +351,19 @@ async function deliverAppointmentNotice(
     });
   }
 
-  const email: SendResult = notice.to
-    ? await sendViaElasticEmail({
-        to: notice.to,
-        subject: notice.emailSubject,
-        html: notice.emailHtml,
-      })
-    : { sent: false, reason: "no-email" };
+  const email: SendResult =
+    channels_.email !== false && notice.to
+      ? await sendViaElasticEmail({
+          to: notice.to,
+          subject: notice.emailSubject,
+          html: notice.emailHtml,
+        })
+      : { sent: false, reason: channels_.email === false ? "not-consented" : "no-email" };
 
-  const sms: SendResult = notice.phone
-    ? await sendViaTwilio({ to: notice.phone, body: notice.smsBody })
-    : { sent: false, reason: "no-phone" };
+  const sms: SendResult =
+    channels_.sms !== false && notice.phone
+      ? await sendViaTwilio({ to: notice.phone, body: notice.smsBody })
+      : { sent: false, reason: channels_.sms === false ? "not-consented" : "no-phone" };
 
   return { email, sms };
 }
@@ -395,6 +400,17 @@ export const sendAppointmentConfirmation = action({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<{ email: SendResult; sms: SendResult }> => {
+    let profile;
+    if (args.userId) {
+      profile = await ctx.runQuery(
+        api.records.getPatientRecord,
+        { userId: args.userId }
+      );
+      if (!profile) {
+        console.log(`[emails] Profil patient introuvable pour ${args.userId}`);
+      }
+    }
+
     const notice: AppointmentNotice = {
       userId: args.userId,
       to: args.to,
@@ -413,6 +429,21 @@ export const sendAppointmentConfirmation = action({
       emailHtml: confirmationHtml(args),
       smsBody: `Clinic Bookings : votre rendez-vous est confirmé ${smsDetails(args)}.`,
     };
+
+    if (profile) {
+      const emailConsent = profile.consentEmailReminders === true;
+      const smsConsent = profile.consentSmsReminders === true;
+      const inAppConsent =
+        profile.consentInAppReminders === true ||
+        (!emailConsent && !smsConsent);
+
+      return deliverAppointmentNotice(ctx, notice, {
+        email: emailConsent && process.env.ELASTICEMAIL_API_KEY ? true : false,
+        sms: smsConsent && process.env.TWILIO_ACCOUNT_SID ? true : false,
+        inApp: inAppConsent,
+      });
+    }
+
     return deliverAppointmentNotice(ctx, notice);
   },
 });
@@ -477,6 +508,18 @@ export const sendAppointmentReminder = action({
       };
     }
 
+    const profile = await ctx.runQuery(
+      api.records.getPatientRecord,
+      { userId: info.userId }
+    );
+    if (!profile) {
+      console.log(`[emails] Profil patient introuvable pour ${info.userId}`);
+      return {
+        email: { sent: false, reason: "no-profile" },
+        sms: { sent: false, reason: "no-profile" },
+      };
+    }
+
     const daysBefore = args.daysBefore;
     const notice: AppointmentNotice = {
       userId: info.userId,
@@ -502,6 +545,17 @@ export const sendAppointmentReminder = action({
       emailHtml: reminderHtml(info, daysBefore),
       smsBody: `Clinic Bookings : rappel, votre rendez-vous ${smsDetails(info)} a lieu ${daysPhrase(daysBefore)}.`,
     };
-    return deliverAppointmentNotice(ctx, notice);
+
+    const emailConsent = profile.consentEmailReminders === true;
+    const smsConsent = profile.consentSmsReminders === true;
+    const inAppConsent =
+      profile.consentInAppReminders === true ||
+      (!emailConsent && !smsConsent);
+
+    return deliverAppointmentNotice(ctx, notice, {
+      email: emailConsent && process.env.ELASTICEMAIL_API_KEY ? true : false,
+      sms: smsConsent && process.env.TWILIO_ACCOUNT_SID ? true : false,
+      inApp: inAppConsent,
+    });
   },
 });

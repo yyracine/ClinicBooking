@@ -156,6 +156,10 @@ export const createProfile = mutation({
     reimbursement100: v.optional(v.boolean()),
     tiersPayant: v.optional(v.boolean()),
     reimbursementRate: v.optional(v.number()),
+    // Consent for reminders
+    consentEmailReminders: v.optional(v.boolean()),
+    consentSmsReminders: v.optional(v.boolean()),
+    consentInAppReminders: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const userId = await requireUser(ctx);
@@ -230,6 +234,9 @@ export const createProfile = mutation({
       currentTreatments: cleanList(args.currentTreatments),
       insured: args.insured,
       ...insurance,
+      consentEmailReminders: args.consentEmailReminders,
+      consentSmsReminders: args.consentSmsReminders,
+      consentInAppReminders: args.consentInAppReminders,
     });
   },
 });
@@ -265,6 +272,10 @@ export const updateProfile = mutation({
     reimbursement100: v.optional(v.boolean()),
     tiersPayant: v.optional(v.boolean()),
     reimbursementRate: v.optional(v.number()),
+    // Consent for reminders
+    consentEmailReminders: v.optional(v.boolean()),
+    consentSmsReminders: v.optional(v.boolean()),
+    consentInAppReminders: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const userId = await requireUser(ctx);
@@ -322,6 +333,9 @@ export const updateProfile = mutation({
       currentTreatments: cleanList(args.currentTreatments),
       insured: args.insured,
       ...insurance,
+      consentEmailReminders: args.consentEmailReminders,
+      consentSmsReminders: args.consentSmsReminders,
+      consentInAppReminders: args.consentInAppReminders,
     });
   },
 });
