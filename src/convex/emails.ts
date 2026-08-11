@@ -22,6 +22,13 @@ import { toE164 } from "../lib/booking";
  * in-app, elles, sont toujours créées.
  */
 
+type PatientProfile = {
+  consentEmailReminders?: boolean;
+  consentSmsReminders?: boolean;
+  consentInAppReminders?: boolean;
+  [key: string]: unknown;
+};
+
 const FROM_EMAIL = "Clinic Bookings <noreply@clinic-bookings.local>";
 
 /** Result of a send attempt (annotated to break the api circular reference). */
@@ -431,10 +438,11 @@ export const sendAppointmentConfirmation = action({
     };
 
     if (profile) {
-      const emailConsent = profile.consentEmailReminders === true;
-      const smsConsent = profile.consentSmsReminders === true;
+      const typedProfile = profile as PatientProfile;
+      const emailConsent = typedProfile.consentEmailReminders === true;
+      const smsConsent = typedProfile.consentSmsReminders === true;
       const inAppConsent =
-        profile.consentInAppReminders === true ||
+        typedProfile.consentInAppReminders === true ||
         (!emailConsent && !smsConsent);
 
       return deliverAppointmentNotice(ctx, notice, {
@@ -543,10 +551,11 @@ export const sendAppointmentReminder = action({
       smsBody: `Clinic Bookings : nous vous rappelons votre rendez-vous ${smsDetails(info)}. En cas d'empêchement, annulez-le.`,
     };
 
-    const emailConsent = profile.consentEmailReminders === true;
-    const smsConsent = profile.consentSmsReminders === true;
+    const typedProfile = profile as PatientProfile;
+    const emailConsent = typedProfile.consentEmailReminders === true;
+    const smsConsent = typedProfile.consentSmsReminders === true;
     const inAppConsent =
-      profile.consentInAppReminders === true ||
+      typedProfile.consentInAppReminders === true ||
       (!emailConsent && !smsConsent);
 
     return deliverAppointmentNotice(ctx, notice, {
