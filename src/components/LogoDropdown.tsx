@@ -20,6 +20,9 @@ export function LogoDropdown() {
   const handleSignOut = async () => {
     try {
       await signOut();
+      // Clear all storage to ensure complete logout
+      localStorage.clear();
+      sessionStorage.clear();
       navigate("/");
     } catch (error) {
       console.error("Sign out error:", error);
