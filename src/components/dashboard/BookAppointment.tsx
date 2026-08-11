@@ -414,19 +414,31 @@ export function BookAppointment({
                         {d.title}
                       </span>
                       {d.schedule && d.schedule.length > 0 && (
-                        <span className="mt-1 block text-[11px] leading-4 text-muted-foreground">
-                          {d.schedule
-                            .slice()
-                            .sort(
-                              (a, b) =>
-                                a.day - b.day || a.start.localeCompare(b.start),
-                            )
-                            .map(
-                              (e) =>
-                                `${["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"][e.day]} ${e.start}–${e.end}`,
-                            )
-                            .join(" · ")}
-                        </span>
+                        <button
+                          type="button"
+                          className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            alert(
+                              "Horaires\n\n" +
+                                d.schedule!
+                                  .slice()
+                                  .sort(
+                                    (a, b) =>
+                                      a.day - b.day ||
+                                      a.start.localeCompare(b.start),
+                                  )
+                                  .map(
+                                    (e) =>
+                                      `${["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"][e.day]} ${e.start}–${e.end}`,
+                                  )
+                                  .join("\n"),
+                            );
+                          }}
+                        >
+                          Voir l'horaire
+                          <ChevronRight className="size-3" />
+                        </button>
                       )}
                       <span className="mt-1 block text-xs leading-5 text-muted-foreground">
                         {d.bio}

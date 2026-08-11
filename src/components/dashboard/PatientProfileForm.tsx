@@ -361,6 +361,46 @@ export function PatientProfileForm({ onDone }: { onDone: () => void }) {
               />
             </Field>
 
+            {/* ---------- Communication Preferences ---------- */}
+            <div className="rounded-2xl border border-border/70 bg-muted/30 p-4 sm:col-span-2">
+              <div className="flex items-center gap-2 mb-3">
+                <Mail className="size-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">
+                  Préférences de communication
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                Choisissez les canaux par lesquels vous souhaitez recevoir les
+                rappels de vos rendez-vous.
+              </p>
+
+              <div className="space-y-3">
+                <ToggleRowWithDescription
+                  label="E-mail non chiffré"
+                  description="J'accepte de recevoir des rappels de rendez-vous par e-mail non chiffré et je suis informé des risques."
+                  checked={form.consentEmailReminders}
+                  onChange={toggle("consentEmailReminders")}
+                />
+                <ToggleRowWithDescription
+                  label="SMS"
+                  description="J'accepte de recevoir des rappels par SMS."
+                  checked={form.consentSmsReminders}
+                  onChange={toggle("consentSmsReminders")}
+                />
+                <ToggleRowWithDescription
+                  label="Notifications in-app"
+                  description="J'accepte les notifications in-app."
+                  checked={form.consentInAppReminders}
+                  onChange={toggle("consentInAppReminders")}
+                />
+              </div>
+
+              <p className="mt-4 text-[11px] text-muted-foreground border-t border-border/70 pt-3">
+                ℹ️ Si vous refusez e-mail et SMS, vous recevrez toujours les
+                notifications in-app pour les confirmations et rappels.
+              </p>
+            </div>
+
             {/* ---------- Insurance ---------- */}
             <div className="rounded-2xl border border-border/70 bg-muted/30 p-4 sm:col-span-2">
               <div className="flex items-center justify-between gap-4">
@@ -426,46 +466,6 @@ export function PatientProfileForm({ onDone }: { onDone: () => void }) {
                   </Field>
                 </div>
               )}
-            </div>
-
-            {/* ---------- Communication Preferences ---------- */}
-            <div className="rounded-2xl border border-border/70 bg-muted/30 p-4 sm:col-span-2">
-              <div className="flex items-center gap-2 mb-3">
-                <Mail className="size-4 text-primary" />
-                <p className="text-sm font-semibold text-foreground">
-                  Préférences de communication
-                </p>
-              </div>
-              <p className="text-xs text-muted-foreground mb-4">
-                Choisissez les canaux par lesquels vous souhaitez recevoir les
-                rappels de vos rendez-vous.
-              </p>
-
-              <div className="space-y-3">
-                <ToggleRowWithDescription
-                  label="E-mail non chiffré"
-                  description="J'accepte de recevoir des rappels de rendez-vous par e-mail non chiffré et je suis informé des risques."
-                  checked={form.consentEmailReminders}
-                  onChange={toggle("consentEmailReminders")}
-                />
-                <ToggleRowWithDescription
-                  label="SMS"
-                  description="J'accepte de recevoir des rappels par SMS."
-                  checked={form.consentSmsReminders}
-                  onChange={toggle("consentSmsReminders")}
-                />
-                <ToggleRowWithDescription
-                  label="Notifications in-app"
-                  description="J'accepte les notifications in-app."
-                  checked={form.consentInAppReminders}
-                  onChange={toggle("consentInAppReminders")}
-                />
-              </div>
-
-              <p className="mt-4 text-[11px] text-muted-foreground border-t border-border/70 pt-3">
-                ℹ️ Si vous refusez e-mail et SMS, vous recevrez toujours les
-                notifications in-app pour les confirmations et rappels.
-              </p>
             </div>
           </div>
 
