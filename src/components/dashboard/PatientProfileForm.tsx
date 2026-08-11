@@ -40,7 +40,13 @@ type StringField =
   | "insuranceName"
   | "reimbursementRate";
 
-type BoolField = "insured" | "reimbursement100" | "tiersPayant";
+type BoolField =
+  | "insured"
+  | "reimbursement100"
+  | "tiersPayant"
+  | "consentEmailReminders"
+  | "consentSmsReminders"
+  | "consentInAppReminders";
 
 const EMPTY = {
   lastName: "",
@@ -64,6 +70,10 @@ const EMPTY = {
   reimbursement100: false,
   tiersPayant: false,
   reimbursementRate: "",
+  // Consent defaults (false = no explicit consent given)
+  consentEmailReminders: false,
+  consentSmsReminders: false,
+  consentInAppReminders: false,
 };
 
 export function PatientProfileForm({ onDone }: { onDone: () => void }) {
@@ -124,6 +134,9 @@ export function PatientProfileForm({ onDone }: { onDone: () => void }) {
         reimbursement100: form.insured ? form.reimbursement100 : undefined,
         tiersPayant: form.insured ? form.tiersPayant : undefined,
         reimbursementRate: form.insured ? rate : undefined,
+        consentEmailReminders: form.consentEmailReminders,
+        consentSmsReminders: form.consentSmsReminders,
+        consentInAppReminders: form.consentInAppReminders,
       });
       toast.success("Fiche patient créée — votre dossier médical est ouvert !");
       onDone();
@@ -414,6 +427,46 @@ export function PatientProfileForm({ onDone }: { onDone: () => void }) {
                 </div>
               )}
             </div>
+
+            {/* ---------- Communication Preferences ---------- */}
+            <div className="rounded-2xl border border-border/70 bg-muted/30 p-4 sm:col-span-2">
+              <div className="flex items-center gap-2 mb-3">
+                <Mail className="size-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">
+                  Préférences de communication
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                Choisissez les canaux par lesquels vous souhaitez recevoir les
+                rappels de vos rendez-vous.
+              </p>
+
+              <div className="space-y-3">
+                <ToggleRowWithDescription
+                  label="E-mail non chiffré"
+                  description="J'accepte de recevoir des rappels de rendez-vous par e-mail non chiffré et je suis informé des risques."
+                  checked={form.consentEmailReminders}
+                  onChange={toggle("consentEmailReminders")}
+                />
+                <ToggleRowWithDescription
+                  label="SMS"
+                  description="J'accepte de recevoir des rappels par SMS."
+                  checked={form.consentSmsReminders}
+                  onChange={toggle("consentSmsReminders")}
+                />
+                <ToggleRowWithDescription
+                  label="Notifications in-app"
+                  description="J'accepte les notifications in-app."
+                  checked={form.consentInAppReminders}
+                  onChange={toggle("consentInAppReminders")}
+                />
+              </div>
+
+              <p className="mt-4 text-[11px] text-muted-foreground border-t border-border/70 pt-3">
+                ℹ️ Si vous refusez e-mail et SMS, vous recevrez toujours les
+                notifications in-app pour les confirmations et rappels.
+              </p>
+            </div>
           </div>
 
           <Button
@@ -465,6 +518,33 @@ function splitList(value: string): string[] {
     .split(",")
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
+}
+
+function ToggleRowWithDescription({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-lg border border-border/40 bg-background/50 p-3">
+      <div className="flex-1">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">{description}</p>
+      </div>
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        aria-label={label}
+        className="mt-1 shrink-0"
+      />
+    </div>
+  );
 }
 
 export function ToggleRow({
