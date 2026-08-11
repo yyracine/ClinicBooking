@@ -18,6 +18,13 @@ export function LogoDropdown() {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
+    // Ask for confirmation before signing out
+    const confirmed = window.confirm(
+      "Êtes-vous sûr de vouloir vous déconnecter ?\n\nVotre session sera fermée et vous serez redirigé vers la page d'accueil."
+    );
+
+    if (!confirmed) return;
+
     try {
       await signOut();
       // Clear all storage to ensure complete logout
