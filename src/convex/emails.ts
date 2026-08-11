@@ -188,7 +188,7 @@ function reminderHtml(a: AppointmentMailData, daysBefore: number): string {
         ? "Rappel de rendez-vous"
         : `Rappel de rendez-vous (J-${daysBefore})`,
     greeting: `Bonjour ${escapeHtml(a.patientName)},`,
-    intro: `Petit rappel : votre rendez-vous à la clinique a lieu <strong style="color:#0d9488;">${daysPhrase(daysBefore)}</strong>. Si vous ne pouvez pas vous libérer, pensez à l'annuler depuis votre espace patient.`,
+    intro: `Nous vous rappelons votre rendez-vous <strong style="color:#0d9488;">${daysPhrase(daysBefore)}</strong>. Si vous ne pouvez pas vous présenter, merci de l'annuler depuis votre espace patient.`,
     details: detailsBlock(a),
   });
 }
@@ -538,12 +538,9 @@ export const sendAppointmentReminder = action({
           ? "Rappel : rendez-vous demain"
           : `Rappel : rendez-vous dans ${daysBefore} jours`,
       body: `Rappel : votre rendez-vous a lieu ${daysPhrase(daysBefore)} ${smsDetails(info)}. Pensez à l'annuler si vous ne pouvez pas venir.`,
-      emailSubject:
-        daysBefore === 1
-          ? "Rappel : votre rendez-vous est demain"
-          : `Rappel : votre rendez-vous est dans ${daysBefore} jours`,
+      emailSubject: "Rappel de votre rendez-vous",
       emailHtml: reminderHtml(info, daysBefore),
-      smsBody: `Clinic Bookings : rappel, votre rendez-vous ${smsDetails(info)} a lieu ${daysPhrase(daysBefore)}.`,
+      smsBody: `Clinic Bookings : nous vous rappelons votre rendez-vous ${smsDetails(info)}. En cas d'empêchement, annulez-le.`,
     };
 
     const emailConsent = profile.consentEmailReminders === true;
