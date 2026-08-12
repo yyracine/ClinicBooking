@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   computePatientShare,
   resolveConsultationPrice,
+  DEFAULT_PRICING_GRID,
   type PricingGrid,
 } from "./pricing";
 
@@ -54,62 +55,50 @@ describe("computePatientShare", () => {
 });
 
 describe("resolveConsultationPrice", () => {
-  const GRID: PricingGrid = {
-    generalisteMedecin: 10000,
-    generalisteProfesseur: 15000,
-    specialisteMedecin: 20000,
-    specialisteProfesseur: 30000,
+  const testGrid: PricingGrid = {
+    generaliste: 10000,
+    specialiste: 20000,
+    professeur: 30000,
   };
 
-  it("généraliste + médecin (grade par défaut)", () => {
-    expect(
-      resolveConsultationPrice({}, { price: 5000, isGeneralist: true }, GRID),
-    ).toBe(10000);
+  it("should return price from grid for generaliste", () => {
+    const doctor = { category: "generaliste" as const };
+    const price = resolveConsultationPrice(doctor, testGrid);
+    expect(price).toBe(10000);
   });
 
-  it("généraliste + professeur", () => {
-    expect(
-      resolveConsultationPrice(
-        { academicRank: "professeur" },
-        { price: 5000, isGeneralist: true },
-        GRID,
-      ),
-    ).toBe(15000);
+  it("should return price from grid for specialiste", () => {
+    const doctor = { category: "specialiste" as const };
+    const price = resolveConsultationPrice(doctor, testGrid);
+    expect(price).toBe(20000);
   });
 
-  it("spécialiste + médecin (isGeneralist absent = spécialiste)", () => {
-    expect(resolveConsultationPrice({}, { price: 5000 }, GRID)).toBe(20000);
+  it("should return price from grid for professeur", () => {
+    const doctor = { category: "professeur" as const };
+    const price = resolveConsultationPrice(doctor, testGrid);
+    expect(price).toBe(30000);
   });
 
-  it("spécialiste + professeur", () => {
-    expect(
-      resolveConsultationPrice(
-        { academicRank: "professeur" },
-        { price: 5000, isGeneralist: false },
-        GRID,
-      ),
-    ).toBe(30000);
+  it("should use DEFAULT_PRICING_GRID when grid is null", () => {
+    const doctor = { category: "specialiste" as const };
+    const price = resolveConsultationPrice(doctor, null);
+    expect(price).toBe(DEFAULT_PRICING_GRID.specialiste);
   });
 
-  it("le tarif personnalisé du médecin prime toujours sur la grille", () => {
-    expect(
-      resolveConsultationPrice(
-        { consultationPrice: 99000, academicRank: "professeur" },
-        { price: 5000, isGeneralist: true },
-        GRID,
-      ),
-    ).toBe(99000);
+  it("should use DEFAULT_PRICING_GRID when grid is undefined", () => {
+    const doctor = { category: "generaliste" as const };
+    const price = resolveConsultationPrice(doctor, undefined);
+    expect(price).toBe(DEFAULT_PRICING_GRID.generaliste);
   });
 
-  it("retombe sur le prix du service quand la grille est absente", () => {
-    expect(resolveConsultationPrice({}, { price: 12000 }, null)).toBe(12000);
-    expect(resolveConsultationPrice({}, { price: 12000 }, undefined)).toBe(
-      12000,
-    );
-  });
+  it("should handle all three categories correctly", () => {
+    const categories = ["generaliste", "specialiste", "professeur"] as const;
+    const expectedPrices = [10000, 20000, 30000];
 
-  it("retombe sur le prix du service si une cellule de la grille est manquante", () => {
-    const partial = { ...GRID, specialisteMedecin: undefined } as never;
-    expect(resolveConsultationPrice({}, { price: 7000 }, partial)).toBe(7000);
+    categories.forEach((cat, idx) => {
+      const doctor = { category: cat };
+      const price = resolveConsultationPrice(doctor, testGrid);
+      expect(price).toBe(expectedPrices[idx]);
+    });
   });
 });
