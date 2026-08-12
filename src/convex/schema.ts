@@ -76,11 +76,10 @@ const schema = defineSchema(
       title: v.string(), // job title (fr)
       bio: v.string(), // short bio (fr)
       phone: v.optional(v.string()), // contact number from the fiche
-      consultationPrice: v.optional(v.number()), // price of one consultation, FCFA (no decimals) — tarif EXCEPTIONNEL qui prime sur la grille (voir src/lib/pricing.ts)
-      // Grade académique — combiné à services.isGeneralist pour la grille
-      // tarifaire. Absent = "medecin" (médecins créés avant ce champ).
-      academicRank: v.optional(
-        v.union(v.literal("medecin"), v.literal("professeur")),
+      category: v.union(
+        v.literal("generaliste"),
+        v.literal("specialiste"),
+        v.literal("professeur"),
       ),
       // Weekly working hours: one entry per workday.
       schedule: v.optional(
