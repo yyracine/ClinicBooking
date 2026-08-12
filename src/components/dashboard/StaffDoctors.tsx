@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { PricingGridManager } from "@/components/dashboard/PricingGridManager";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
@@ -117,6 +118,7 @@ export function StaffDoctors() {
 
   return (
     <div className="space-y-5">
+      <PricingGridManager />
       <PricingGridPanel grid={grid} />
 
       {/* Toolbar */}
@@ -822,10 +824,9 @@ function Field({
 /* ------------------------------------------------------------------ */
 
 const GRID_FIELDS: { key: keyof PricingGrid; label: string }[] = [
-  { key: "generalisteMedecin", label: "Généraliste · Médecin" },
-  { key: "generalisteProfesseur", label: "Généraliste · Professeur" },
-  { key: "specialisteMedecin", label: "Spécialiste · Médecin" },
-  { key: "specialisteProfesseur", label: "Spécialiste · Professeur" },
+  { key: "generaliste", label: "Généraliste" },
+  { key: "specialiste", label: "Spécialiste" },
+  { key: "professeur", label: "Professeur" },
 ];
 
 function PricingGridPanel({
@@ -837,10 +838,9 @@ function PricingGridPanel({
   const [form, setForm] = useState<Record<keyof PricingGrid, string>>(() => {
     const base = grid ?? DEFAULT_PRICING_GRID;
     return {
-      generalisteMedecin: String(base.generalisteMedecin),
-      generalisteProfesseur: String(base.generalisteProfesseur),
-      specialisteMedecin: String(base.specialisteMedecin),
-      specialisteProfesseur: String(base.specialisteProfesseur),
+      generaliste: String(base.generaliste),
+      specialiste: String(base.specialiste),
+      professeur: String(base.professeur),
     };
   });
   const [saving, setSaving] = useState(false);
@@ -849,10 +849,9 @@ function PricingGridPanel({
     setSaving(true);
     try {
       await updatePricingGrid({
-        generalisteMedecin: Number(form.generalisteMedecin),
-        generalisteProfesseur: Number(form.generalisteProfesseur),
-        specialisteMedecin: Number(form.specialisteMedecin),
-        specialisteProfesseur: Number(form.specialisteProfesseur),
+        generaliste: Number(form.generaliste),
+        specialiste: Number(form.specialiste),
+        professeur: Number(form.professeur),
       });
       toast.success("Grille tarifaire mise à jour.");
     } catch (error) {
