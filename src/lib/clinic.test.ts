@@ -49,35 +49,41 @@ describe("formatVitalSigns", () => {
 });
 
 describe("appointmentPrice", () => {
-  it("prefers the tariff set on the doctor fiche", () => {
+  it("uses the doctor category from the pricing grid", () => {
+    const grid = {
+      generaliste: 10000,
+      specialiste: 20000,
+      professeur: 30000,
+    };
     expect(
       appointmentPrice({
-        doctor: { consultationPrice: 30000 },
-        service: { price: 20000 },
-      } as never),
+        doctor: { category: "professeur" },
+        service: { price: 5000 },
+      } as never,
+        grid,
+      ),
     ).toBe(30000);
   });
 
-  it("falls back to the service price without a grid", () => {
+  it("returns 0 when the doctor or service is missing", () => {
     expect(
       appointmentPrice({
-        doctor: {},
+        doctor: null,
         service: { price: 20000 },
       } as never),
-    ).toBe(20000);
+    ).toBe(0);
   });
 
   it("uses the pricing grid category when provided", () => {
     const grid = {
-      generalisteMedecin: 10000,
-      generalisteProfesseur: 15000,
-      specialisteMedecin: 20000,
-      specialisteProfesseur: 30000,
+      generaliste: 10000,
+      specialiste: 20000,
+      professeur: 30000,
     };
     expect(
       appointmentPrice(
         {
-          doctor: { academicRank: "professeur" },
+          doctor: { category: "professeur" },
           service: { price: 5000, isGeneralist: false },
         } as never,
         grid,

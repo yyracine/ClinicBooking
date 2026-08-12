@@ -1,6 +1,5 @@
 import {
   resolveConsultationPrice,
-  type AcademicRank,
   type InsuranceLike,
   type PricingGrid,
 } from "@/lib/pricing";
@@ -142,9 +141,7 @@ export interface AppointmentWithDetails {
     name: string;
     title: string;
     color: string;
-    /** Exceptional per-doctor tariff (FCFA) — primes over the pricing grid. */
-    consultationPrice?: number;
-    academicRank?: AcademicRank;
+    category: "generaliste" | "specialiste" | "professeur";
   } | null;
   service: {
     name: string;
@@ -165,7 +162,7 @@ export function appointmentPrice(
   grid?: PricingGrid | null,
 ): number {
   if (!a.doctor || !a.service) return 0;
-  return resolveConsultationPrice(a.doctor, a.service, grid);
+  return resolveConsultationPrice(a.doctor, grid);
 }
 
 /** Appointment with patient details joined (staff view). */
