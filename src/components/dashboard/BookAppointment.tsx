@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { PricingGridDisplay } from "@/components/dashboard/PricingGridDisplay";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
@@ -262,8 +263,11 @@ export function BookAppointment({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px]">
-      {/* ---------- Selection flow ---------- */}
+    <div className="space-y-6">
+      <PricingGridDisplay />
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px]">
+        {/* ---------- Selection flow ---------- */}
       <div className="space-y-5">
         {/* Service */}
         <section
@@ -665,6 +669,7 @@ export function BookAppointment({
           </div>
         </Card>
       </aside>
+      </div>
     </div>
   );
 }
