@@ -86,7 +86,7 @@ type SeedDoctor = {
   title: string;
   bio: string;
   phone: string;
-  consultationPrice: number;
+  category: "generaliste" | "specialiste" | "professeur";
   schedule: SeedSchedule[];
   color: string;
 };
@@ -138,67 +138,67 @@ const SEED_DOCTORS: SeedDoctor[] = [
   {
     name: "Dr Camille Moreau", firstName: "Camille", lastName: "Moreau", serviceKey: "general",
     title: "Médecin généraliste", bio: "Plus de 12 ans d'expérience en médecine de famille.",
-    phone: "+225 07 00 01 02 03", consultationPrice: 10000, schedule: FULL_WEEK_SCHEDULE, color: "teal",
+    phone: "+225 07 00 01 02 03", category: "generaliste", schedule: FULL_WEEK_SCHEDULE, color: "teal",
   },
   {
     name: "Dr Julien Lefèvre", firstName: "Julien", lastName: "Lefèvre", serviceKey: "general",
     title: "Médecin généraliste", bio: "Diplômé de Paris-Descartes, attentif à la prévention.",
-    phone: "+225 07 00 01 02 04", consultationPrice: 12000, schedule: MORNINGS_ONLY_SCHEDULE, color: "emerald",
+    phone: "+225 07 00 01 02 04", category: "generaliste", schedule: MORNINGS_ONLY_SCHEDULE, color: "emerald",
   },
   // Cardiologie
   {
     name: "Dr Sophie Dubois", firstName: "Sophie", lastName: "Dubois", serviceKey: "cardio",
     title: "Cardiologue", bio: "Spécialiste du suivi de l'insuffisance cardiaque.",
-    phone: "+225 07 00 01 02 05", consultationPrice: 25000, schedule: SPECIALIST_SCHEDULE, color: "rose",
+    phone: "+225 07 00 01 02 05", category: "specialiste", schedule: SPECIALIST_SCHEDULE, color: "rose",
   },
   {
     name: "Dr Antoine Girard", firstName: "Antoine", lastName: "Girard", serviceKey: "cardio",
-    title: "Cardiologue", bio: "Expert en rythmologie et dépistage précoce.",
-    phone: "+225 07 00 01 02 06", consultationPrice: 30000, schedule: FULL_WEEK_SCHEDULE, color: "red",
+    title: "Professeur de Cardiologie", bio: "Expert en rythmologie et dépistage précoce.",
+    phone: "+225 07 00 01 02 06", category: "professeur", schedule: FULL_WEEK_SCHEDULE, color: "red",
   },
   // Dermatologie
   {
     name: "Dr Léa Fontaine", firstName: "Léa", lastName: "Fontaine", serviceKey: "derma",
     title: "Dermatologue", bio: "Passionnée de dermatologie esthétique.",
-    phone: "+225 07 00 01 02 07", consultationPrice: 15000, schedule: SPECIALIST_SCHEDULE, color: "amber",
+    phone: "+225 07 00 01 02 07", category: "specialiste", schedule: SPECIALIST_SCHEDULE, color: "amber",
   },
   {
     name: "Dr Marc Chevallier", firstName: "Marc", lastName: "Chevallier", serviceKey: "derma",
     title: "Dermatologue", bio: "Praticien hospitalier, spécialiste des affections chroniques.",
-    phone: "+225 07 00 01 02 08", consultationPrice: 20000, schedule: MORNINGS_ONLY_SCHEDULE, color: "orange",
+    phone: "+225 07 00 01 02 08", category: "specialiste", schedule: MORNINGS_ONLY_SCHEDULE, color: "orange",
   },
   // Pédiatrie
   {
     name: "Dr Chloé Bernard", firstName: "Chloé", lastName: "Bernard", serviceKey: "pediatrie",
     title: "Pédiatre", bio: "À l'écoute des tout-petits et de leurs parents.",
-    phone: "+225 07 00 01 02 09", consultationPrice: 12000, schedule: FULL_WEEK_SCHEDULE, color: "violet",
+    phone: "+225 07 00 01 02 09", category: "specialiste", schedule: FULL_WEEK_SCHEDULE, color: "violet",
   },
   {
     name: "Dr Nicolas Perrin", firstName: "Nicolas", lastName: "Perrin", serviceKey: "pediatrie",
     title: "Pédiatre", bio: "Ancien chef de clinique, vaccination et suivi de croissance.",
-    phone: "+225 07 00 01 02 10", consultationPrice: 10000, schedule: MORNINGS_ONLY_SCHEDULE, color: "purple",
+    phone: "+225 07 00 01 02 10", category: "specialiste", schedule: MORNINGS_ONLY_SCHEDULE, color: "purple",
   },
   // Dentisterie
   {
     name: "Dr Emma Rousseau", firstName: "Emma", lastName: "Rousseau", serviceKey: "dentaire",
     title: "Chirurgien-dentiste", bio: "Soins conservateurs et prévention, sans douleur.",
-    phone: "+225 07 00 01 02 11", consultationPrice: 18000, schedule: FULL_WEEK_SCHEDULE, color: "sky",
+    phone: "+225 07 00 01 02 11", category: "specialiste", schedule: FULL_WEEK_SCHEDULE, color: "sky",
   },
   {
     name: "Dr Hugo Marchand", firstName: "Hugo", lastName: "Marchand", serviceKey: "dentaire",
     title: "Chirurgien-dentiste", bio: "Implantologie et soins du quotidien pour toute la famille.",
-    phone: "+225 07 00 01 02 12", consultationPrice: 25000, schedule: SPECIALIST_SCHEDULE, color: "cyan",
+    phone: "+225 07 00 01 02 12", category: "specialiste", schedule: SPECIALIST_SCHEDULE, color: "cyan",
   },
   // Ophtalmologie
   {
     name: "Dr Inès Lambert", firstName: "Inès", lastName: "Lambert", serviceKey: "ophtalmo",
     title: "Ophtalmologue", bio: "Dépistage du glaucome et suivi de la myopie.",
-    phone: "+225 07 00 01 02 13", consultationPrice: 15000, schedule: FULL_WEEK_SCHEDULE, color: "indigo",
+    phone: "+225 07 00 01 02 13", category: "specialiste", schedule: FULL_WEEK_SCHEDULE, color: "indigo",
   },
   {
     name: "Dr Paul Garnier", firstName: "Paul", lastName: "Garnier", serviceKey: "ophtalmo",
     title: "Ophtalmologue", bio: "Chirurgie de la cataracte et basse vision.",
-    phone: "+225 07 00 01 02 14", consultationPrice: 20000, schedule: MORNINGS_ONLY_SCHEDULE, color: "blue",
+    phone: "+225 07 00 01 02 14", category: "specialiste", schedule: MORNINGS_ONLY_SCHEDULE, color: "blue",
   },
 ];
 
@@ -289,7 +289,6 @@ export const ensureSeedData = mutation({
           firstName: string;
           lastName: string;
           phone: string;
-          consultationPrice: number;
           schedule: SeedSchedule[];
         }> = {};
         if (!d.firstName && !d.lastName) {
@@ -297,9 +296,6 @@ export const ensureSeedData = mutation({
           patch.lastName = seed.lastName;
         }
         if (!d.phone) patch.phone = seed.phone;
-        if (d.consultationPrice == null) {
-          patch.consultationPrice = seed.consultationPrice;
-        }
         if (!d.schedule || d.schedule.length === 0) {
           patch.schedule = seed.schedule;
         }

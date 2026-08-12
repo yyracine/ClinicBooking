@@ -94,7 +94,7 @@ export const getAppointmentPaymentInfo = query({
     ]);
 
     const price =
-      doctor && service ? resolveConsultationPrice(doctor, service, grid) : 0;
+      doctor && service ? resolveConsultationPrice(doctor, grid) : 0;
     const amount = computePatientShare(price, profile);
 
     return {
@@ -274,7 +274,7 @@ export const recordMobilePayment = mutation({
     ]);
 
     const mobilePrice =
-      doctor && service ? resolveConsultationPrice(doctor, service, grid) : 0;
+      doctor && service ? resolveConsultationPrice(doctor, grid) : 0;
     const amountPaid = computePatientShare(mobilePrice, profile);
 
     await ctx.db.patch(args.appointmentId, {

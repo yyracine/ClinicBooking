@@ -152,8 +152,7 @@ export const myAppointments = query({
                 name: doctor.name,
                 title: doctor.title,
                 color: doctor.color,
-                consultationPrice: doctor.consultationPrice,
-                academicRank: doctor.academicRank,
+                category: doctor.category,
               }
             : null,
           service: service
@@ -212,8 +211,7 @@ export const allAppointments = query({
                 name: doctor.name,
                 title: doctor.title,
                 color: doctor.color,
-                consultationPrice: doctor.consultationPrice,
-                academicRank: doctor.academicRank,
+                category: doctor.category,
               }
             : null,
           service: service
@@ -445,12 +443,11 @@ export const recordPayment = mutation({
     const service = await ctx.db.get(appointment.serviceId);
     if (!service) throw new Error("Service introuvable.");
 
-    // The price of the consultation follows the doctor's own tariff if set,
-    // else the clinic's category pricing grid, else the service price.
+    // The price of the consultation follows the clinic's category pricing grid.
     const doctor = await ctx.db.get(appointment.doctorId);
     const grid = await getPricingGrid(ctx.db);
     const price = doctor
-      ? resolveConsultationPrice(doctor, service, grid)
+      ? resolveConsultationPrice(doctor, grid)
       : service.price;
 
     const profile = await ctx.db
