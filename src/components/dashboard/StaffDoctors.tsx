@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -36,7 +35,6 @@ import {
 import {
   DEFAULT_PRICING_GRID,
   resolveConsultationPrice,
-  type AcademicRank,
   type PricingGrid,
 } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
@@ -65,8 +63,7 @@ interface DoctorDoc {
   title: string;
   bio: string;
   phone?: string;
-  consultationPrice?: number;
-  academicRank?: AcademicRank;
+  category?: "generaliste" | "specialiste" | "professeur";
   schedule?: DoctorScheduleEntry[];
   color: string;
 }
@@ -78,11 +75,7 @@ interface DoctorForm {
   title: string;
   bio: string;
   phone: string;
-  academicRank: AcademicRank;
-  /** Whether the exceptional per-doctor tariff input is shown/used. */
-  hasCustomPrice: boolean;
-  /** Consultation price, kept as a string while editing the input. */
-  consultationPrice: string;
+  category: "generaliste" | "specialiste" | "professeur";
   schedule: DoctorScheduleEntry[];
 }
 
@@ -93,9 +86,7 @@ const EMPTY_FORM: DoctorForm = {
   title: "",
   bio: "",
   phone: "",
-  academicRank: "medecin",
-  hasCustomPrice: false,
-  consultationPrice: "",
+  category: "specialiste",
   schedule: [],
 };
 
@@ -220,29 +211,17 @@ export function StaffDoctors() {
                 </p>
                 <p className="flex items-center gap-2 text-muted-foreground">
                   <Coins className="size-3.5 shrink-0 text-primary" />
-                  {(() => {
-                    const service = serviceOf(d.serviceId);
-                    const price = service
-                      ? resolveConsultationPrice(d, service, grid)
-                      : undefined;
-                    return (
-                      <span className="font-semibold text-foreground">
-                        {price != null ? formatPrice(price) : "—"}
-                      </span>
-                    );
-                  })()}
+                  <span className="font-semibold text-foreground">
+                    {formatPrice(resolveConsultationPrice(d, grid))}
+                  </span>
                   <span>la consultation</span>
-                  {d.consultationPrice != null && (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-                      tarif personnalisé
-                    </span>
-                  )}
                 </p>
                 <p className="text-[11px] font-medium text-muted-foreground">
-                  {serviceOf(d.serviceId)?.isGeneralist
-                    ? "Généraliste"
-                    : "Spécialiste"}{" "}
-                  · {d.academicRank === "professeur" ? "Professeur" : "Médecin"}
+                  {d.category === "generaliste"
+                    ? "Docteur Généraliste"
+                    : d.category === "professeur"
+                      ? "Professeur"
+                      : "Docteur Spécialiste"}
                 </p>
                 <div className="flex items-start gap-2 text-muted-foreground">
                   <CalendarClock className="mt-0.5 size-3.5 shrink-0 text-primary" />
@@ -265,7 +244,6 @@ export function StaffDoctors() {
           services={services ?? []}
           grid={grid}
           onSave={async (form) => {
-            const price = form.consultationPrice.trim();
             const payload = {
               firstName: form.firstName,
               lastName: form.lastName,
@@ -274,11 +252,7 @@ export function StaffDoctors() {
               bio: form.bio,
               phone: form.phone,
               schedule: form.schedule,
-              academicRank: form.academicRank,
-              consultationPrice:
-                form.hasCustomPrice && price !== ""
-                  ? Number(price)
-                  : undefined,
+              category: form.category,
             };
             if (dialog.mode === "edit") {
               await updateDoctor({
@@ -533,12 +507,7 @@ function DoctorDialog({
           title: doctor.title ?? "",
           bio: doctor.bio ?? "",
           phone: doctor.phone ?? "",
-          academicRank: doctor.academicRank ?? "medecin",
-          hasCustomPrice: doctor.consultationPrice != null,
-          consultationPrice:
-            doctor.consultationPrice != null
-              ? String(doctor.consultationPrice)
-              : "",
+          category: (doctor.category as "generaliste" | "specialiste" | "professeur") ?? "specialiste",
           schedule: doctor.schedule ?? [],
         }
       : EMPTY_FORM,
@@ -581,19 +550,6 @@ function DoctorDialog({
     if (!form.serviceId) {
       setError("Choisissez la spécialité du médecin.");
       return;
-    }
-    if (form.hasCustomPrice) {
-      const price = Number(form.consultationPrice);
-      if (
-        !form.consultationPrice.trim() ||
-        !Number.isInteger(price) ||
-        price <= 0
-      ) {
-        setError(
-          "Indiquez le tarif personnalisé en FCFA (sans décimales), ou décochez la case.",
-        );
-        return;
-      }
     }
     for (const e of form.schedule) {
       if (e.end <= e.start) {
@@ -695,89 +651,21 @@ function DoctorDialog({
             </Field>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Type (déduit de la spécialité)">
-              <div className="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-foreground">
-                {services.find((s) => s._id === form.serviceId)?.isGeneralist
-                  ? "Généraliste"
-                  : "Spécialiste"}
-              </div>
-            </Field>
-            <Field label="Grade">
-              <Select
-                value={form.academicRank}
-                onValueChange={(v) =>
-                  set({ academicRank: v as AcademicRank })
-                }
-                disabled={saving}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="medecin">Médecin</SelectItem>
-                  <SelectItem value="professeur">Professeur</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-
-          <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-muted/30 px-4 py-3">
-            <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Coins className="size-4 text-primary" />
-              Prix de la consultation
-            </span>
-            <span className="text-sm font-bold text-foreground">
-              {(() => {
-                const selectedService = services.find(
-                  (s) => s._id === form.serviceId,
-                );
-                if (!selectedService) return "—";
-                const price = form.hasCustomPrice
-                  ? Number(form.consultationPrice) || 0
-                  : resolveConsultationPrice(
-                      { academicRank: form.academicRank },
-                      selectedService,
-                      grid ?? DEFAULT_PRICING_GRID,
-                    );
-                return formatPrice(price);
-              })()}
-            </span>
-          </div>
-
-          <Field label="">
-            <label className="flex items-center gap-2 text-sm text-foreground">
-              <Checkbox
-                checked={form.hasCustomPrice}
-                onCheckedChange={(checked) =>
-                  set({ hasCustomPrice: checked === true })
-                }
-                disabled={saving}
-              />
-              Tarif personnalisé pour ce médecin (intervention particulière)
-            </label>
-            {form.hasCustomPrice && (
-              <div className="relative mt-2">
-                <Coins className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min={0}
-                  step={500}
-                  inputMode="numeric"
-                  value={form.consultationPrice}
-                  onChange={(e) =>
-                    set({ consultationPrice: e.target.value })
-                  }
-                  placeholder="10 000"
-                  className="pl-9"
-                  disabled={saving}
-                />
-              </div>
-            )}
-            <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
-              Sans case cochée, le prix suit automatiquement la grille
-              tarifaire de la clinique selon le type et le grade ci-dessus.
-            </p>
+          <Field label="Catégorie tarifaire*">
+            <select
+              value={form.category}
+              onChange={(e) =>
+                set({
+                  category: e.target.value as "generaliste" | "specialiste" | "professeur",
+                })
+              }
+              disabled={saving}
+              className="border rounded px-2 py-1 w-full"
+            >
+              <option value="generaliste">Docteur Généraliste</option>
+              <option value="specialiste">Docteur Spécialiste</option>
+              <option value="professeur">Professeur</option>
+            </select>
           </Field>
 
           <Field label="Courte présentation (optionnel)">
