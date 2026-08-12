@@ -132,13 +132,12 @@ function cleanGridValue(value: number, label: string): number {
   return value;
 }
 
-/** Staff: set the 4-category consultation pricing grid. */
+/** Staff: set the 3-category consultation pricing grid. */
 export const updatePricingGrid = mutation({
   args: {
-    generalisteMedecin: v.number(),
-    generalisteProfesseur: v.number(),
-    specialisteMedecin: v.number(),
-    specialisteProfesseur: v.number(),
+    generaliste: v.number(),
+    specialiste: v.number(),
+    professeur: v.number(),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -150,22 +149,9 @@ export const updatePricingGrid = mutation({
       throw new Error("Accès réservé à l'administration de la clinique.");
     }
     await setPricingGrid(ctx.db, {
-      generalisteMedecin: cleanGridValue(
-        args.generalisteMedecin,
-        "Généraliste · Médecin",
-      ),
-      generalisteProfesseur: cleanGridValue(
-        args.generalisteProfesseur,
-        "Généraliste · Professeur",
-      ),
-      specialisteMedecin: cleanGridValue(
-        args.specialisteMedecin,
-        "Spécialiste · Médecin",
-      ),
-      specialisteProfesseur: cleanGridValue(
-        args.specialisteProfesseur,
-        "Spécialiste · Professeur",
-      ),
+      generaliste: cleanGridValue(args.generaliste, "Généraliste"),
+      specialiste: cleanGridValue(args.specialiste, "Spécialiste"),
+      professeur: cleanGridValue(args.professeur, "Professeur"),
     });
   },
 });
