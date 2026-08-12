@@ -180,7 +180,6 @@ export function BookAppointment({
         time,
         price: resolveConsultationPrice(
           selectedDoctor,
-          selectedService,
           grid,
         ),
         durationMinutes: selectedService.durationMinutes,
@@ -608,7 +607,6 @@ export function BookAppointment({
                 ? formatPrice(
                     resolveConsultationPrice(
                       selectedDoctor,
-                      selectedService,
                       grid,
                     ),
                   )
