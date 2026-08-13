@@ -450,6 +450,18 @@ export function BookAppointment({
           </section>
         )}
 
+        {/* Price summary */}
+        {selectedDoctor && (
+          <div className="rounded-xl border border-primary/30 bg-primary/[0.04] p-4 ring-1 ring-primary/10">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+              Tarif de cette consultation
+            </p>
+            <p className="text-2xl font-bold text-foreground">
+              {formatPrice(resolveConsultationPrice(selectedDoctor, grid))}
+            </p>
+          </div>
+        )}
+
         {/* Date + time */}
         {selectedDoctor && (
           <section
