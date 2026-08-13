@@ -619,9 +619,7 @@ export function BookAppointment({
                       grid,
                     ),
                   )
-                : selectedService
-                  ? formatPrice(selectedService.price)
-                  : "—"}
+                : "—"}
             </span>
           </div>
 
