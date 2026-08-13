@@ -1,7 +1,5 @@
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 
 /**
