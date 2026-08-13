@@ -130,9 +130,19 @@ export function StaffPlanning() {
     [shown, query],
   );
 
+  const sorted = useMemo(
+    () =>
+      [...filtered].sort((a, b) => {
+        const dateCompare = b.date.localeCompare(a.date);
+        if (dateCompare !== 0) return dateCompare;
+        return b.time.localeCompare(a.time);
+      }),
+    [filtered],
+  );
+
   /** Download the currently filtered appointments as a CSV file (Excel FR). */
   const exportCsv = () => {
-    const rows = filtered.map((a) => ({
+    const rows = sorted.map((a) => ({
       date: a.date,
       time: a.time,
       patientName: a.patient.name,
@@ -294,7 +304,7 @@ export function StaffPlanning() {
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
-              {filtered.length} rendez-vous
+              {sorted.length} rendez-vous
             </span>
             <div className="flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border/70 bg-card p-1 shadow-soft">
               {FILTERS.map((f) => (
@@ -333,7 +343,7 @@ export function StaffPlanning() {
             />
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card/60 px-6 py-14 text-center">
           <div className="flex size-12 items-center justify-center rounded-full bg-muted">
             <CalendarCheck2 className="size-5 text-muted-foreground" />
@@ -378,7 +388,7 @@ export function StaffPlanning() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((a) => {
+              {sorted.map((a) => {
                 const Icon = serviceIcon(a.service?.icon);
                 const updating = updatingId === a._id;
                 return (

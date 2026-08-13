@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { initials } from "@/lib/clinic";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -125,6 +126,7 @@ const VIEW_META: Record<ViewKey, { title: string; description: string }> = {
 
 export default function Dashboard() {
   const { user, isLoading, signOut } = useAuth();
+  useInactivityLogout();
   const navigate = useNavigate();
   const [view, setView] = useState<ViewKey>("book");
   const [passwordOpen, setPasswordOpen] = useState(false);
