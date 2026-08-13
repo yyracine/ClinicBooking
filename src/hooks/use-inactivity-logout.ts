@@ -74,5 +74,5 @@ export function useInactivityLogout() {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
     };
-  }, [user]);
+  }, [user, signOut]);
 }
