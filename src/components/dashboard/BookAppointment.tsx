@@ -348,9 +348,6 @@ export function BookAppointment({
                           <Clock className="size-3.5" />
                           {s.durationMinutes} min
                         </span>
-                        <span className="text-foreground">
-                          {formatPrice(s.price)}
-                        </span>
                       </span>
                     </button>
                   );

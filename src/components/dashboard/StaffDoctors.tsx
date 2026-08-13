@@ -662,7 +662,7 @@ function DoctorDialog({
                 })
               }
               disabled={saving}
-              className="border rounded px-2 py-1 w-full"
+              className="bg-primary/10 border border-primary/30 rounded px-3 py-2 w-full text-foreground"
             >
               <option value="generaliste">Docteur Généraliste</option>
               <option value="specialiste">Docteur Spécialiste</option>
