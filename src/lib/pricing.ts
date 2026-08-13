@@ -46,12 +46,16 @@ export const DEFAULT_PRICING_GRID: PricingGrid = {
  * Prix effectif d'une consultation pour un médecin et une grille tarifaire.
  *
  * Recherche dans la grille selon la catégorie du médecin.
- * Si la grille est absente, utilise les valeurs par défaut.
+ * Si la grille est absente ou invalide, utilise les valeurs par défaut.
  */
 export function resolveConsultationPrice(
   doctor: { category: "generaliste" | "specialiste" | "professeur" },
   grid: PricingGrid | null | undefined,
 ): number {
   if (!grid) return DEFAULT_PRICING_GRID[doctor.category];
-  return grid[doctor.category];
+  const price = grid[doctor.category];
+  if (price == null || !Number.isFinite(price)) {
+    return DEFAULT_PRICING_GRID[doctor.category];
+  }
+  return price;
 }

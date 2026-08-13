@@ -113,7 +113,8 @@ export function formatTimeRange(time: string, durationMinutes: number): string {
 }
 
 /** "45 000 FCFA" — local currency, no decimals. */
-export function formatPrice(price: number): string {
+export function formatPrice(price: number | undefined | null): string {
+  if (price == null || !Number.isFinite(price)) return "0 FCFA";
   return `${price.toLocaleString("fr-FR")} FCFA`;
 }
 
