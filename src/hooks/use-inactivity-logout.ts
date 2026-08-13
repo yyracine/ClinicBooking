@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
@@ -14,24 +14,13 @@ export function useInactivityLogout() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const getInactivityDuration = () => {
-    // Staff gets 10 minutes, patients get 5 minutes
-    return user?.role === "staff" ? 10 * 60 * 1000 : 5 * 60 * 1000;
-  };
+  const inactivityDuration = user?.role === "staff" ? 10 * 60 * 1000 : 5 * 60 * 1000;
+  const warningDuration = inactivityDuration - 60 * 1000;
 
-  const getWarningDuration = () => {
-    // Show warning 1 minute before logout
-    const total = getInactivityDuration();
-    return total - 60 * 1000;
-  };
-
-  const resetInactivityTimer = () => {
+  const resetInactivityTimer = useCallback(() => {
     // Clear existing timers
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
-
-    const inactivityDuration = getInactivityDuration();
-    const warningDuration = getWarningDuration();
 
     // Set warning timer
     warningTimeoutRef.current = setTimeout(() => {
@@ -49,7 +38,7 @@ export function useInactivityLogout() {
       signOut();
       toast.info("Vous avez été déconnecté en raison de l'inactivité.");
     }, inactivityDuration);
-  };
+  }, [inactivityDuration, warningDuration, user?.role, signOut]);
 
   useEffect(() => {
     if (!user) return;
@@ -74,5 +63,5 @@ export function useInactivityLogout() {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
     };
-  }, [user, signOut]);
+  }, [user, resetInactivityTimer]);
 }
